@@ -109,8 +109,9 @@ namespace {
     KEYCUDA       = 0x1000000,
     KEYHLSL       = 0x2000000,
     KEYFIXEDPOINT = 0x4000000,
-    KEYMAX        = KEYFIXEDPOINT, // The maximum key
-    KEYALLCXX = KEYCXX | KEYCXX11 | KEYCXX20,
+    KEYPATMAT     = 0x8000000,
+    KEYMAX        = KEYPATMAT, // The maximum key
+    KEYALLCXX = KEYCXX | KEYCXX11 | KEYCXX20 | KEYPATMAT,
     KEYALL = (KEYMAX | (KEYMAX-1)) & ~KEYNOMS18 &
              ~KEYNOOPENCL // KEYNOMS18 and KEYNOOPENCL are used to exclude.
   };
@@ -224,6 +225,7 @@ static KeywordStatus getKeywordStatus(const LangOptions &LangOpts,
                                       unsigned Flags) {
   // KEYALL means always enabled, so special case this one.
   if (Flags == KEYALL) return KS_Enabled;
+<<<<<<< HEAD
   // These are tests that need to 'always win', as they are special in that they
   // disable based on certain conditions.
   if (LangOpts.OpenCL && (Flags & KEYNOOPENCL)) return KS_Disabled;
