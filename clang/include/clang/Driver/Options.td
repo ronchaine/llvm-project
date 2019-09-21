@@ -1635,6 +1635,12 @@ def fembed_offload_object_EQ : Joined<["-"], "fembed-offload-object=">,
   Visibility<[ClangOption, CC1Option, FC1Option]>,
   HelpText<"Embed Offloading device-side binary into host object file as a section.">,
   MarshallingInfoStringVector<CodeGenOpts<"OffloadObjects">>;
+
+// C++ Pattern matching P2688R1
+def fpattern_matching : Flag <["-"], "fpattern-matching">, Group<f_Group>,
+  Flags<[DriverOption, CC1Option]>,
+  HelpText<"Enable support for C++ Pattern Matching">;
+
 def fembed_bitcode_EQ : Joined<["-"], "fembed-bitcode=">,
     Group<f_Group>, Flags<[NoXarchOption]>,
     Visibility<[ClangOption, CC1Option, CC1AsOption]>, MetaVarName<"<option>">,
