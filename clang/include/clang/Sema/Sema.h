@@ -8801,6 +8801,16 @@ public:
   StmtResult ActOnFinishSwitchStmt(SourceLocation SwitchLoc, Stmt *Switch,
                                    Stmt *Body);
 
+  // P2688 pattern matching patterns
+  StmtResult ActOnWildcardPattern(Token IdentTok,
+                                  SourceLocation ColonLoc,
+                                  Stmt *SubStmt);
+  StmtResult ActOnIdentifierPattern(Token IdentTok,
+                                    SourceLocation ColonLoc,
+                                    Stmt *SubStmt);
+  StmtResult ActOnExpressionPattern(Expr *ConstExpr,
+                                    SourceLocation ColonLoc,
+                                    Stmt *SubStmt);
   StmtResult ActOnStartOfInspectStmt(SourceLocation InspectLoc,
                                      Stmt *InitStmt,
                                      ConditionResult Cond);
