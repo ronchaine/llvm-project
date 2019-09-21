@@ -156,6 +156,9 @@ public:
     /// This is the scope of an OpenACC Compute Construct, which restricts
     /// jumping into/out of it.
     OpenACCComputeConstructScope = 0x10000000,
+
+    /// This is the scope of a C++ P2688 / pattern matching 'match' statement.
+    InspectScope = 0x20000000,
   };
 
 private:
@@ -488,6 +491,20 @@ public:
     // just check BreakScope and not SwitchScope.
     return (getFlags() & Scope::BreakScope) &&
            !(getFlags() & Scope::SwitchScope);
+  }
+
+  /// Return true if this scope is an inspect scope.
+  bool isInspectScope() const {
+    for (const Scope *S = this; S; S = S->getParent()) {
+      if (S->getFlags() & Scope::InspectScope)
+        return true;
+      else if (S->getFlags() & (Scope::FnScope | Scope::ClassScope |
+        Scope::BlockScope | Scope::TemplateParamScope |
+        Scope::FunctionPrototypeScope |
+        Scope::AtCatchScope | Scope::ObjCMethodScope))
+        return false;
+    }
+    return false;
   }
 
   /// Determines whether this scope is the OpenMP directive scope

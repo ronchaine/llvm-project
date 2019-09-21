@@ -207,6 +207,12 @@ Retry:
       takeAndConcatenateAttrs(CXX11Attrs, GNUAttrs, Attrs);
 
       // identifier ':' statement
+
+      // detect whether we're pattern matching
+      if (getCurScope()->isInspectScope()) {
+        return ParsePatternStatement(Attrs, StmtCtx);
+      }
+
       return ParseLabeledStatement(Attrs, StmtCtx);
     }
 
@@ -1826,6 +1832,37 @@ StmtResult Parser::ParseSwitchStatement(SourceLocation *TrailingElseLoc) {
 /// [C++]   'inspect' '(' condition ')' statement
 StmtResult Parser::ParseInspectStatement(SourceLocation *TrailingElseLoc) {
   assert(Tok.is(tok::kw_inspect) && "Not an inspect stmt!");
+  SourceLocation InspectLoc = ConsumeToken();  // eat the 'inspect'.
+
+  // inspect (...) { }
+  //         ^
+
+  if (Tok.isNot(tok::l_paren)) {
+    Diag(Tok, diag::err_expected_lparen_after) << "inspect";
+    SkipUntil(tok::semi);
+    return StmtError();
+  }
+
+  ParseScope InspectScope(this, Scope::InspectScope);
+
+  // Parse the condition.
+  StmtResult InitStmt;
+  Sema::ConditionResult Cond;
+  if (ParseParenExprOrCondition(&InitStmt, Cond, InspectLoc, Sema::ConditionKind::Inspect)) {
+    return StmtError();
+  }
+
+  // inspect (...) { }
+  //               ^
+  // See comments in ParseIfStatement for why we create a scope for the
+  // condition and a new scope for substatement in C++.
+  ParseScope InnerScope(this, Scope::DeclScope, true, Tok.is(tok::l_brace));
+  // Read the body statement.
+  StmtResult Body(ParseStatement(TrailingElseLoc));
+
+  // Pop the scopes.
+  InnerScope.Exit();
+  InspectScope.Exit();
 
   return StmtError();
 }
