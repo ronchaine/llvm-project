@@ -3359,9 +3359,16 @@ public:
   void EmitBreakStmt(const BreakStmt &S);
   void EmitContinueStmt(const ContinueStmt &S);
   void EmitSwitchStmt(const SwitchStmt &S);
+
   void EmitDefaultStmt(const DefaultStmt &S, ArrayRef<const Attr *> Attrs);
   void EmitCaseStmt(const CaseStmt &S, ArrayRef<const Attr *> Attrs);
   void EmitCaseStmtRange(const CaseStmt &S, ArrayRef<const Attr *> Attrs);
+
+  void EmitInspectStmt(const InspectStmt &S);
+  void EmitWildcardPatternStmt(const WildcardPatternStmt &S);
+  void EmitIdentifierPatternStmt(const IdentifierPatternStmt &S);
+  void EmitExpressionStmt(const ExpressionPatternStmt &S);
+
   void EmitAsmStmt(const AsmStmt &S);
 
   void EmitObjCForCollectionStmt(const ObjCForCollectionStmt &S);

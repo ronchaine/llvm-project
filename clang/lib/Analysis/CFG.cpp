@@ -637,6 +637,11 @@ private:
   CFGBlock *VisitOMPExecutableDirective(OMPExecutableDirective *D,
                                         AddStmtChoice asc);
 
+  CFGBlock *VisitInspectStmt(InspectStmt *Terminator);
+  CFGBlock *VisitWildcardPatternStmt(WildcardPatternStmt *Terminator);
+  CFGBlock *VisitIdentifierPatternStmt(IdentifierPatternStmt *Terminator);
+  CFGBlock *VisitExpressionPatternStmt(ExpressionPatternStmt *Terminator);
+
   void maybeAddScopeBeginForVarDecl(CFGBlock *B, const VarDecl *VD,
                                     const Stmt *S) {
     if (ScopePos && (VD == ScopePos.getFirstVarInScope()))
@@ -2397,6 +2402,9 @@ CFGBlock *CFGBuilder::Visit(Stmt * S, AddStmtChoice asc,
 
     case Stmt::SwitchStmtClass:
       return VisitSwitchStmt(cast<SwitchStmt>(S));
+
+    case Stmt::InspectStmtClass:
+      return VisitInspectStmt(cast <InspectStmt>(S));
 
     case Stmt::UnaryOperatorClass:
       return VisitUnaryOperator(cast<UnaryOperator>(S), asc);
@@ -4563,6 +4571,22 @@ CFGBlock *CFGBuilder::VisitDefaultStmt(DefaultStmt *Terminator) {
   Succ = DefaultCaseBlock;
 
   return DefaultCaseBlock;
+}
+
+CFGBlock *CFGBuilder::VisitInspectStmt(InspectStmt *Terminator) {
+  return nullptr;
+}
+
+CFGBlock *CFGBuilder::VisitWildcardPatternStmt(WildcardPatternStmt *Terminator) {
+  return nullptr;
+}
+
+CFGBlock *CFGBuilder::VisitIdentifierPatternStmt(IdentifierPatternStmt *Terminator) {
+  return nullptr;
+}
+
+CFGBlock *CFGBuilder::VisitExpressionPatternStmt(ExpressionPatternStmt *Terminator) {
+  return nullptr;
 }
 
 CFGBlock *CFGBuilder::VisitCXXTryStmt(CXXTryStmt *Terminator) {

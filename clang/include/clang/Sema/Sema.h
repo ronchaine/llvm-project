@@ -8802,6 +8802,8 @@ public:
                                    Stmt *Body);
 
   // P2688 pattern matching patterns
+  ExprResult CheckInspectCondition(SourceLocation InspectLoc, Expr *Cond);
+
   StmtResult ActOnWildcardPattern(SourceLocation WildcardLoc,
                                   SourceLocation ColonLoc,
                                   Stmt *SubStmt);
