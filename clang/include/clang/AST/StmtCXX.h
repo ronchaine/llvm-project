@@ -17,6 +17,7 @@
 #include "clang/AST/Expr.h"
 #include "clang/AST/NestedNameSpecifier.h"
 #include "clang/AST/Stmt.h"
+#include "clang/Lex/Token.h"
 #include "llvm/Support/Compiler.h"
 
 namespace clang {
@@ -574,23 +575,20 @@ class WildcardPatternStmt final
 
   // WildcardPatternStmt is followed by several trailing objects.
   //
-  // * A "Stmt *" for the LHS of the pattern statement. Always present.
-  //
   // * A "Stmt *" for the substatement of the pattern statement. Always present.
-  enum { LhsOffset = 0, SubStmtOffsetFromLhs = 1 };
-  enum { NumMandatoryStmtPtr = 2 };
+  enum { NumMandatoryStmtPtr = 1 };
 
   unsigned numTrailingObjects(OverloadToken<Stmt *>) const {
     return NumMandatoryStmtPtr;
   }
 
-  unsigned lhsOffset() const { return LhsOffset; }
-  unsigned subStmtOffset() const { return lhsOffset() + SubStmtOffsetFromLhs; }
+  unsigned subStmtOffset() const { return 0; }
 
-  WildcardPatternStmt(Expr *lhs, SourceLocation patternLoc, SourceLocation colonLoc)
+public:
+
+  WildcardPatternStmt(SourceLocation patternLoc, SourceLocation colonLoc, Stmt *substmt)
     : PatternStmt(WildcardPatternStmtClass, patternLoc, colonLoc) {
-    setLHS(lhs);
-    setSubStmt(nullptr);
+    setSubStmt(substmt);
   }
 
   /// Build an empty wildcard pattern statement.
@@ -598,9 +596,8 @@ class WildcardPatternStmt final
     : PatternStmt(WildcardPatternStmtClass, Empty) {
   }
 
-public:
   /// Build a wildcard pattern statement.
-  static WildcardPatternStmt *Create(const ASTContext &Ctx, Expr *lhs, 
+  static WildcardPatternStmt *Create(const ASTContext &Ctx, 
                                      SourceLocation patternLoc, SourceLocation colonLoc);
 
   /// Build an empty wildcard pattern statement.
@@ -608,18 +605,6 @@ public:
 
   SourceLocation getIdentifierLoc() const { return getPatternLoc(); }
   void setIdentifierLoc(SourceLocation L) { setPatternLoc(L); }
-
-  Expr *getLHS() {
-    return reinterpret_cast<Expr *>(getTrailingObjects<Stmt *>()[lhsOffset()]);
-  }
-
-  const Expr *getLHS() const {
-    return reinterpret_cast<Expr *>(getTrailingObjects<Stmt *>()[lhsOffset()]);
-  }
-
-  void setLHS(Expr *Val) {
-    getTrailingObjects<Stmt *>()[lhsOffset()] = reinterpret_cast<Stmt *>(Val);
-  }
 
   Stmt *getSubStmt() { return getTrailingObjects<Stmt *>()[subStmtOffset()]; }
   const Stmt *getSubStmt() const {
@@ -665,23 +650,24 @@ class IdentifierPatternStmt final
 
   // IdentifierPatternStmt is followed by several trailing objects.
   //
-  // * A "Stmt *" for the LHS of the pattern statement. Always present.
-  //
   // * A "Stmt *" for the substatement of the pattern statement. Always present.
-  enum { LhsOffset = 0, SubStmtOffsetFromLhs = 1 };
-  enum { NumMandatoryStmtPtr = 2 };
+
+  enum { NumMandatoryStmtPtr = 1 };
 
   unsigned numTrailingObjects(OverloadToken<Stmt *>) const {
     return NumMandatoryStmtPtr;
   }
 
-  unsigned lhsOffset() const { return LhsOffset; }
-  unsigned subStmtOffset() const { return lhsOffset() + SubStmtOffsetFromLhs; }
+  unsigned subStmtOffset() const { return 0; }
 
-  IdentifierPatternStmt(Expr *lhs, SourceLocation patternLoc, SourceLocation colonLoc)
+  Token IdentifierToken;
+
+public:
+
+  IdentifierPatternStmt(Token identifierTok, SourceLocation patternLoc, SourceLocation colonLoc, Stmt *substmt)
     : PatternStmt(IdentifierPatternStmtClass, patternLoc, colonLoc) {
-    setLHS(lhs);
-    setSubStmt(nullptr);
+    setIdentifierToken(identifierTok);
+    setSubStmt(substmt);
   }
 
   /// Build an empty identifier pattern statement.
@@ -689,28 +675,18 @@ class IdentifierPatternStmt final
     : PatternStmt(IdentifierPatternStmtClass, Empty) {
   }
 
-public:
   /// Build a identifier pattern statement.
-  static IdentifierPatternStmt *Create(const ASTContext &Ctx, Expr *lhs, 
+  static IdentifierPatternStmt *Create(const ASTContext &Ctx, Token identifierTok,
                                        SourceLocation patternLoc, SourceLocation colonLoc);
 
   /// Build an empty identifier pattern statement.
   static IdentifierPatternStmt *CreateEmpty(const ASTContext &Ctx);
 
+  Token getIdentifierToken() const { return IdentifierToken; }
+  void setIdentifierToken(Token identifierTok) { IdentifierToken = identifierTok; }
+
   SourceLocation getIdentifierLoc() const { return getPatternLoc(); }
   void setIdentifierLoc(SourceLocation L) { setPatternLoc(L); }
-
-  Expr *getLHS() {
-    return reinterpret_cast<Expr *>(getTrailingObjects<Stmt *>()[lhsOffset()]);
-  }
-
-  const Expr *getLHS() const {
-    return reinterpret_cast<Expr *>(getTrailingObjects<Stmt *>()[lhsOffset()]);
-  }
-
-  void setLHS(Expr *Val) {
-    getTrailingObjects<Stmt *>()[lhsOffset()] = reinterpret_cast<Stmt *>(Val);
-  }
 
   Stmt *getSubStmt() { return getTrailingObjects<Stmt *>()[subStmtOffset()]; }
   const Stmt *getSubStmt() const {
@@ -769,10 +745,11 @@ class ExpressionPatternStmt final
   unsigned lhsOffset() const { return LhsOffset; }
   unsigned subStmtOffset() const { return lhsOffset() + SubStmtOffsetFromLhs; }
 
-  ExpressionPatternStmt(Expr *lhs, SourceLocation patternLoc, SourceLocation colonLoc)
+public:
+  ExpressionPatternStmt(Expr *lhs, SourceLocation patternLoc, SourceLocation colonLoc, Stmt *substmt)
     : PatternStmt(ExpressionPatternStmtClass, patternLoc, colonLoc) {
     setLHS(lhs);
-    setSubStmt(nullptr);
+    setSubStmt(substmt);
   }
 
   /// Build an empty expression pattern statement.
@@ -780,7 +757,6 @@ class ExpressionPatternStmt final
     : PatternStmt(ExpressionPatternStmtClass, Empty) {
   }
 
-public:
   /// Build a expression pattern statement.
   static ExpressionPatternStmt *Create(const ASTContext &Ctx, Expr *lhs, 
                                        SourceLocation patternLoc, SourceLocation colonLoc);

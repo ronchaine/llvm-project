@@ -8802,13 +8802,15 @@ public:
                                    Stmt *Body);
 
   // P2688 pattern matching patterns
-  StmtResult ActOnWildcardPattern(Token IdentTok,
+  StmtResult ActOnWildcardPattern(SourceLocation WildcardLoc,
                                   SourceLocation ColonLoc,
                                   Stmt *SubStmt);
   StmtResult ActOnIdentifierPattern(Token IdentTok,
+                                    SourceLocation IdentifierLoc,
                                     SourceLocation ColonLoc,
                                     Stmt *SubStmt);
-  StmtResult ActOnExpressionPattern(Expr *ConstExpr,
+  StmtResult ActOnExpressionPattern(ExprResult Condition,
+                                    SourceLocation ExpressionLoc,
                                     SourceLocation ColonLoc,
                                     Stmt *SubStmt);
   StmtResult ActOnStartOfInspectStmt(SourceLocation InspectLoc,
