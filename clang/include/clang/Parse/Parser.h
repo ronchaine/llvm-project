@@ -2130,7 +2130,7 @@ private:
                                    ParsedStmtContext StmtCtx);
   StmtResult ParseWildcardPattern(ParsedStmtContext StmtCtx);
   StmtResult ParseIdentifierPattern(ParsedStmtContext StmtCtx);
-  StmtResult ParseExpressionPattern(ParsedStmtContext StmtCtx);
+  StmtResult ParseExpressionPattern(ParsedStmtContext StmtCtx, Expr *Condition);
   StmtResult ParseCaseStatement(ParsedStmtContext StmtCtx,
                                 bool MissingCase = false,
                                 ExprResult Expr = ExprResult());
