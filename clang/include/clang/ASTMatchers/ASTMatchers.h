@@ -2357,6 +2357,56 @@ extern const internal::VariadicDynCastAllOfMatcher<Stmt, CaseStmt> caseStmt;
 extern const internal::VariadicDynCastAllOfMatcher<Stmt, DefaultStmt>
     defaultStmt;
 
+/// Matches inspect statements.
+///
+/// Given
+/// \code
+///   inspect(a) { }
+/// \endcode
+/// inspectStmt()
+///   matches 'inspect(a)'.
+extern const internal::VariadicDynCastAllOfMatcher<Stmt, InspectStmt> inspectStmt;
+
+/// Matches pattern statements inside inspect statements.
+///
+/// Given
+/// \code
+///   inspect(a) { b: x(); 0: y(); __: z() }
+/// \endcode
+/// switchCase()
+///   matches 'b: ', '0:' and '__:'
+extern const internal::VariadicDynCastAllOfMatcher<Stmt, PatternStmt> patternStmt;
+
+/// Matches wildcard pattern statements inside inspect statements.
+///
+/// Given
+/// \code
+///   inspect(a) { b: x(); 0: y(); __: z() }
+/// \endcode
+/// wildcardPatternStmt()
+///   matches '__:'.
+extern const internal::VariadicDynCastAllOfMatcher<Stmt, WildcardPatternStmt> wildcardPatternStmt;
+
+/// Matches identifier pattern statements inside inspect statements.
+///
+/// Given
+/// \code
+///   inspect(a) { b: x(); 0: y(); __: z() }
+/// \endcode
+/// identifierPatternStmt()
+///   matches 'b:'.
+extern const internal::VariadicDynCastAllOfMatcher<Stmt, IdentifierPatternStmt> identifierPatternStmt;
+
+/// Matches expression pattern statements inside inspect statements.
+///
+/// Given
+/// \code
+///   inspect(a) { b: x(); 0: y(); __: z() }
+/// \endcode
+/// expressionPatternStmt()
+///   matches '0:'.
+extern const internal::VariadicDynCastAllOfMatcher<Stmt, ExpressionPatternStmt> expressionPatternStmt;
+
 /// Matches compound statements.
 ///
 /// Example matches '{}' and '{{}}' in 'for (;;) {{}}'
@@ -5592,7 +5642,7 @@ AST_POLYMORPHIC_MATCHER_P(hasInitStatement,
 }
 
 /// Matches the condition expression of an if statement, for loop,
-/// switch statement or conditional operator.
+/// switch statement, inspect statement or conditional operator.
 ///
 /// Example matches true (matcher = hasCondition(cxxBoolLiteral(equals(true))))
 /// \code
@@ -5601,7 +5651,7 @@ AST_POLYMORPHIC_MATCHER_P(hasInitStatement,
 AST_POLYMORPHIC_MATCHER_P(
     hasCondition,
     AST_POLYMORPHIC_SUPPORTED_TYPES(IfStmt, ForStmt, WhileStmt, DoStmt,
-                                    SwitchStmt, AbstractConditionalOperator),
+                                    SwitchStmt, InspectStmt, AbstractConditionalOperator),
     internal::Matcher<Expr>, InnerMatcher) {
   const Expr *const Condition = Node.getCond();
   return (Condition != nullptr &&
@@ -7886,6 +7936,31 @@ AST_MATCHER_P(SwitchStmt, forEachSwitchCase, internal::Matcher<SwitchCase>,
     if (CaseMatched) {
       Matched = true;
       Result.addMatch(CaseBuilder);
+    }
+  }
+  *Builder = std::move(Result);
+  return Matched;
+}
+
+/// Matches each pattern statement belonging to the given inspect
+/// statement. This matcher may produce multiple matches.
+///
+/// Given
+/// \code
+///   inspect (a) { }
+/// \endcode
+AST_MATCHER_P(InspectStmt, forEachInspectPattern, internal::Matcher<PatternStmt>,
+  InnerMatcher) {
+  BoundNodesTreeBuilder Result;
+
+  bool Matched = false;
+  for (const PatternStmt *PS = Node.getPatternList(); PS;
+    PS = PS->getNextPattern()) {
+    BoundNodesTreeBuilder PatternBuilder(*Builder);
+    bool PatternMatched = InnerMatcher.matches(*PS, Finder, &PatternBuilder);
+    if (PatternMatched) {
+      Matched = true;
+      Result.addMatch(PatternBuilder);
     }
   }
   *Builder = std::move(Result);

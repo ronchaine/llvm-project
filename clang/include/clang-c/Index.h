@@ -2151,6 +2151,24 @@ enum CXCursorKind {
 
   CXCursor_LastStmt = CXCursor_OpenACCComputeConstruct,
 
+  /** An inspect statement.
+   */
+  CXCursor_InspectStmt = 321,
+
+  /** A wildcard pattern statement.
+   */
+  CXCursor_WildcardPatternStmt = 322,
+
+  /** An identifier pattern statement.
+   */
+  CXCursor_IdentifierPatternStmt = 323,
+
+  /** An expression pattern statement.
+   */
+  CXCursor_ExpressionPatternStmt = 324,
+
+  CXCursor_LastStmt = CXCursor_ExpressionPatternStmt,
+
   /**
    * Cursor that represents the translation unit itself.
    *
