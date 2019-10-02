@@ -8807,9 +8807,9 @@ public:
   StmtResult ActOnWildcardPattern(SourceLocation WildcardLoc,
                                   SourceLocation ColonLoc,
                                   Stmt *SubStmt);
-  StmtResult ActOnIdentifierPattern(Token IdentTok,
-                                    SourceLocation IdentifierLoc,
+  StmtResult ActOnIdentifierPattern(SourceLocation IdentifierLoc,
                                     SourceLocation ColonLoc,
+                                    Expr *Condition,
                                     Stmt *SubStmt);
   StmtResult ActOnExpressionPattern(ExprResult Condition,
                                     SourceLocation ExpressionLoc,

@@ -1521,7 +1521,7 @@ TEST_P(ASTMatchersTest, SwitchCase_MatchesSwitch) {
 TEST(PatternMatching, MatchesInspect) {
   EXPECT_TRUE(matchesConditionally("void x() { inspect(42) { __:; } }", inspectStmt(), true, "-fpattern-matching"));
   EXPECT_TRUE(matchesConditionally("void x() { inspect(42) { 42:; } }", inspectStmt(), true, "-fpattern-matching"));
-  EXPECT_TRUE(matchesConditionally("void x() { int y=0; inspect(42) y:; }", inspectStmt(), true, "-fpattern-matching"));
+  EXPECT_TRUE(matchesConditionally("void x() { int y=0; inspect(42) { y:; } }", inspectStmt(), true, "-fpattern-matching"));
   EXPECT_TRUE(matchesConditionally("void x() { }", inspectStmt(), false, "-fpattern-matching"));
 }
 
