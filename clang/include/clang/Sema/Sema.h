@@ -8811,9 +8811,9 @@ public:
                                     SourceLocation ColonLoc,
                                     Expr *Condition,
                                     Stmt *SubStmt);
-  StmtResult ActOnExpressionPattern(ExprResult Condition,
-                                    SourceLocation ExpressionLoc,
+  StmtResult ActOnExpressionPattern(SourceLocation ExpressionLoc,
                                     SourceLocation ColonLoc,
+                                    Expr *Condition,
                                     Stmt *SubStmt);
   StmtResult ActOnStartOfInspectStmt(SourceLocation InspectLoc,
                                      Stmt *InitStmt,
