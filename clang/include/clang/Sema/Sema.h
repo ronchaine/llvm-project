@@ -8806,15 +8806,18 @@ public:
 
   StmtResult ActOnWildcardPattern(SourceLocation WildcardLoc,
                                   SourceLocation ColonLoc,
-                                  Stmt *SubStmt);
+                                  Stmt *SubStmt
+                                  Expr *PatternGuard);
   StmtResult ActOnIdentifierPattern(SourceLocation IdentifierLoc,
                                     SourceLocation ColonLoc,
                                     Expr *Condition,
-                                    Stmt *SubStmt);
+                                    Stmt *SubStmt,
+                                    Expr *PatternGuard);
   StmtResult ActOnExpressionPattern(SourceLocation ExpressionLoc,
                                     SourceLocation ColonLoc,
                                     Expr *Condition,
-                                    Stmt *SubStmt);
+                                    Stmt *SubStmt,
+                                    Expr *PatternGuard);
   StmtResult ActOnStartOfInspectStmt(SourceLocation InspectLoc,
                                      Stmt *InitStmt,
                                      ConditionResult Cond);
