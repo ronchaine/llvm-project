@@ -66,6 +66,7 @@ class ModuleFileExtension;
 class ModuleFileExtensionWriter;
 class NamedDecl;
 class ObjCInterfaceDecl;
+class PatternStmt;
 class PreprocessingRecord;
 class Preprocessor;
 class RecordDecl;
