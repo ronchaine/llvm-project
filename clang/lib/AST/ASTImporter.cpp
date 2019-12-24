@@ -6936,7 +6936,7 @@ ExpectedStmt ASTNodeImporter::VisitSwitchStmt(SwitchStmt *S) {
 ExpectedStmt ASTNodeImporter::VisitInspectStmt(InspectStmt *S) {
   auto Imp = importSeq(
     S->getInit(), S->getConditionVariable(), S->getCond(),
-    S->getBody(), S->getInspectLoc());
+    S->getInspectLoc());
   if (!Imp)
     return Imp.takeError();
 
@@ -6944,11 +6944,10 @@ ExpectedStmt ASTNodeImporter::VisitInspectStmt(InspectStmt *S) {
   VarDecl *ToConditionVariable;
   Expr *ToCond;
   SourceLocation ToInspectLoc;
-  std::tie(ToInit, ToConditionVariable, ToCond, ToBody, ToInspectLoc) = *Imp;
+  std::tie(ToInit, ToConditionVariable, ToCond, ToInspectLoc) = *Imp;
 
   auto *ToStmt = InspectStmt::Create(Importer.getToContext(), ToInit,
     ToConditionVariable, ToCond);
-  ToStmt->setBody(ToBody);
   ToStmt->setInspectLoc(ToInspectLoc);
 
   // Now we have to re-chain the patterns.
