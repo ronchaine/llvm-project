@@ -2126,16 +2126,17 @@ private:
   StmtResult ParseExprStatement(ParsedStmtContext StmtCtx);
   StmtResult ParseLabeledStatement(ParsedAttributes &Attrs,
                                    ParsedStmtContext StmtCtx);
-  StmtResult ParsePatternStatement(ParsedAttributesWithRange &attrs,
+  StmtResult ParsePatternStatement(InspectStmt *Inspect, 
+                                   ParsedAttributesWithRange &attrs,
                                    ParsedStmtContext StmtCtx);
-  StmtResult ParseWildcardPattern(ParsedStmtContext StmtCtx);
-  StmtResult ParseIdentifierPattern(ParsedStmtContext StmtCtx);
-  StmtResult ParseExpressionPattern(ParsedStmtContext StmtCtx, Expr *Condition);
-  StmtResult ParseStructuredBindingPattern(ParsedStmtContext StmtCtx);
-  StmtResult ParseTypedPattern(ParsedStmtContext StmtCtx);
-  StmtResult ParseCasePattern(ParsedStmtContext StmtCtx);
-  StmtResult ParseBindingPattern(ParsedStmtContext StmtCtx);
-  StmtResult ParseParenthesisedPattern(ParsedStmtContext);
+  StmtResult ParseWildcardPattern(InspectStmt *Inspect, ParsedStmtContext StmtCtx);
+  StmtResult ParseIdentifierPattern(InspectStmt *Inspect, ParsedStmtContext StmtCtx);
+  StmtResult ParseExpressionPattern(InspectStmt *Inspect, ParsedStmtContext StmtCtx, Expr *Condition);
+  StmtResult ParseStructuredBindingPattern(InspectStmt *Inspect, ParsedStmtContext StmtCtx);
+  StmtResult ParseTypedPattern(InspectStmt *Inspect, ParsedStmtContext StmtCtx);
+  StmtResult ParseCasePattern(InspectStmt *Inspect, ParsedStmtContext StmtCtx);
+  StmtResult ParseBindingPattern(InspectStmt *Inspect, ParsedStmtContext StmtCtx);
+  StmtResult ParseParenthesisedPattern(InspectStmt *Inspect, ParsedStmtContext StmtCtx);
 
   StmtResult ParseCaseStatement(ParsedStmtContext StmtCtx,
                                 bool MissingCase = false,
