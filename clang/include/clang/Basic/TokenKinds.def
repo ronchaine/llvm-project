@@ -1016,6 +1016,7 @@ ANNOTATION(repl_input_end)
 #undef TYPE_TRAIT_1
 #undef TYPE_TRAIT
 #undef CXX20_KEYWORD
+#undef PATMAT_KEYWORD
 #undef CXX11_KEYWORD
 #undef KEYWORD
 #undef PUNCTUATOR

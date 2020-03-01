@@ -857,6 +857,7 @@ StmtResult Parser::ParsePatternStatement(InspectStmt *Inspect,
       return ParseExpressionPattern(Inspect, StmtCtx, Expr.get());
     }
   }
+  return StmtError();
 }
 
 StmtResult Parser::ParseWildcardPattern(InspectStmt *Inspect, ParsedStmtContext StmtCtx) {

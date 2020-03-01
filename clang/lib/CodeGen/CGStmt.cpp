@@ -2309,17 +2309,17 @@ void CodeGenFunction::EmitInspectStmt(const InspectStmt &S) {
 
 void CodeGenFunction::EmitWildcardPatternStmt(const WildcardPatternStmt &S) {
   llvm::BasicBlock* PatternDest = createBasicBlock("pat.bb");
-  EmitBlock(PatternDest, &S);
+  EmitBlock(PatternDest);
 }
 
 void CodeGenFunction::EmitIdentifierPatternStmt(const IdentifierPatternStmt &S) {
   llvm::BasicBlock* PatternDest = createBasicBlock("pat.bb");
-  EmitBlock(PatternDest, &S);
+  EmitBlock(PatternDest);
 }
 
 void CodeGenFunction::EmitExpressionPatternStmt(const ExpressionPatternStmt &S) {
   llvm::BasicBlock* PatternDest = createBasicBlock("pat.bb");
-  EmitBlock(PatternDest, &S);
+  EmitBlock(PatternDest);
 }
 
 static std::string

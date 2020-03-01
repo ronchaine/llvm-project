@@ -6934,17 +6934,13 @@ ExpectedStmt ASTNodeImporter::VisitSwitchStmt(SwitchStmt *S) {
 }
 
 ExpectedStmt ASTNodeImporter::VisitInspectStmt(InspectStmt *S) {
-  auto Imp = importSeq(
-    S->getInit(), S->getConditionVariable(), S->getCond(),
-    S->getInspectLoc());
-  if (!Imp)
-    return Imp.takeError();
-
-  Stmt *ToInit;
-  VarDecl *ToConditionVariable;
-  Expr *ToCond;
-  SourceLocation ToInspectLoc;
-  std::tie(ToInit, ToConditionVariable, ToCond, ToInspectLoc) = *Imp;
+  Error Err = Error::success();
+  auto ToInit = importChecked(Err, S->getInit());
+  auto ToConditionVariable = importChecked(Err, S->getConditionVariable());
+  auto ToCond = importChecked(Err, S->getCond());
+  auto ToInspectLoc = importChecked(Err, S->getInspectLoc());
+  if (Err)
+    return std::move(Err);
 
   auto *ToStmt = InspectStmt::Create(Importer.getToContext(), ToInit,
     ToConditionVariable, ToCond);
@@ -6968,14 +6964,13 @@ ExpectedStmt ASTNodeImporter::VisitInspectStmt(InspectStmt *S) {
 }
 
 ExpectedStmt ASTNodeImporter::VisitWildcardPatternStmt(WildcardPatternStmt *S) {
-  auto Imp = importSeq(S->getSubStmt(), S->getPatternLoc(), S->getColonLoc(), S->getPatternGuard());
-  if (!Imp)
-    return Imp.takeError();
-
-  Stmt *ToSubStmt;
-  SourceLocation ToPatternLoc, ToColonLoc;
-  Expr *ToPatternGuard;
-  std::tie(ToSubStmt, ToPatternLoc, ToColonLoc, ToPatternGuard) = *Imp;
+  Error Err = Error::success();
+  auto ToSubStmt = importChecked(Err, S->getSubStmt());
+  auto ToPatternLoc = importChecked(Err, S->getPatternLoc());
+  auto ToColonLoc = importChecked(Err, S->getColonLoc());
+  auto ToPatternGuard = importChecked(Err, S->getPatternGuard());
+  if (Err)
+    return std::move(Err);
 
   auto *ToStmt = WildcardPatternStmt::Create(Importer.getToContext(), ToPatternLoc, 
                                              ToColonLoc, ToPatternGuard);
@@ -6985,15 +6980,14 @@ ExpectedStmt ASTNodeImporter::VisitWildcardPatternStmt(WildcardPatternStmt *S) {
 }
 
 ExpectedStmt ASTNodeImporter::VisitIdentifierPatternStmt(IdentifierPatternStmt *S) {
-  auto Imp = importSeq(S->getCond(), S->getSubStmt(), S->getPatternLoc(), S->getColonLoc(), S->getPatternGuard());
-  if (!Imp)
-    return Imp.takeError();
-
-  Expr *ToCond;
-  Stmt *ToSubStmt;
-  SourceLocation ToPatternLoc, ToColonLoc;
-  Expr *ToPatternGuard;
-  std::tie(ToCond, ToSubStmt, ToPatternLoc, ToColonLoc, ToPatternGuard) = *Imp;
+  Error Err = Error::success();
+  auto ToSubStmt = importChecked(Err, S->getSubStmt());
+  auto ToPatternLoc = importChecked(Err, S->getPatternLoc());
+  auto ToColonLoc = importChecked(Err, S->getColonLoc());
+  auto ToCond = importChecked(Err, S->getCond());
+  auto ToPatternGuard = importChecked(Err, S->getPatternGuard());
+  if (Err)
+    return std::move(Err);
 
   auto *ToStmt = IdentifierPatternStmt::Create(Importer.getToContext(), ToPatternLoc, 
                                                ToColonLoc, ToPatternGuard);
@@ -7004,19 +6998,18 @@ ExpectedStmt ASTNodeImporter::VisitIdentifierPatternStmt(IdentifierPatternStmt *
 }
 
 ExpectedStmt ASTNodeImporter::VisitExpressionPatternStmt(ExpressionPatternStmt *S) {
-  auto Imp = importSeq(S->getCond(), S->getSubStmt(), S->getPatternLoc(), S->getColonLoc(), S->getPatternGuard());
-  if (!Imp)
-    return Imp.takeError();
-
-  Expr *ToCondition;
-  Stmt *ToSubStmt;
-  SourceLocation ToPatternLoc, ToColonLoc;
-  Expr *ToPatternGuard;
-  std::tie(ToCondition, ToSubStmt, ToPatternLoc, ToColonLoc, ToPatternGuard) = *Imp;
+  Error Err = Error::success();
+  auto ToSubStmt = importChecked(Err, S->getSubStmt());
+  auto ToPatternLoc = importChecked(Err, S->getPatternLoc());
+  auto ToColonLoc = importChecked(Err, S->getColonLoc());
+  auto ToCond = importChecked(Err, S->getCond());
+  auto ToPatternGuard = importChecked(Err, S->getPatternGuard());
+  if (Err)
+    return std::move(Err);
 
   auto *ToStmt = ExpressionPatternStmt::Create(Importer.getToContext(), ToPatternLoc, 
                                                ToColonLoc, ToPatternGuard);
-  ToStmt->setCond(ToCondition);
+  ToStmt->setCond(ToCond);
   ToStmt->setSubStmt(ToSubStmt);
 
   return ToStmt;

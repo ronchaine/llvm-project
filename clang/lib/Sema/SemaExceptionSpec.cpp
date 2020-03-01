@@ -1380,6 +1380,12 @@ CanThrowResult Sema::canThrow(const Stmt *S) {
   case Expr::UnresolvedLookupExprClass:
   case Expr::UnresolvedMemberExprClass:
   case Expr::TypoExprClass:
+  // FIXME: this last 4 can probably throw, just
+  // silencing warnings right for now.
+  case Stmt::InspectStmtClass:
+  case Stmt::ExpressionPatternStmtClass:
+  case Stmt::IdentifierPatternStmtClass:
+  case Stmt::WildcardPatternStmtClass:
     // FIXME: Many of the above can throw.
     return CT_Cannot;
 

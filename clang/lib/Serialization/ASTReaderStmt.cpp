@@ -284,9 +284,9 @@ void ASTStmtReader::VisitInspectStmt(InspectStmt *S) {
   if (HasInit)
     S->setInit(Record.readSubStmt());
   if (HasVar)
-    S->setConditionVariable(Record.getContext(), ReadDeclAs<VarDecl>());
+    S->setConditionVariable(Record.getContext(), readDeclAs<VarDecl>());
 
-  S->setInspectLoc(ReadSourceLocation());
+  S->setInspectLoc(readSourceLocation());
 
   PatternStmt* PrevSC = nullptr;
   for (auto E = Record.size(); Record.getIdx() != E; ) {
@@ -306,8 +306,8 @@ void ASTStmtReader::VisitPatternStmt(PatternStmt* S) {
   bool HasPatternGuard = Record.readInt();
 
   Record.recordInspectPatternID(S, Record.readInt());
-  S->setPatternLoc(ReadSourceLocation());
-  S->setColonLoc(ReadSourceLocation());
+  S->setPatternLoc(readSourceLocation());
+  S->setColonLoc(readSourceLocation());
 
   if (HasPatternGuard) {
     S->setPatternGuard(Record.readSubExpr());
