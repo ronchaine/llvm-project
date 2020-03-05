@@ -2129,7 +2129,7 @@ private:
   StmtResult ParsePatternStatement(InspectStmt *Inspect, 
                                    ParsedAttributesWithRange &attrs,
                                    ParsedStmtContext StmtCtx);
-  StmtResult ParseWildcardPattern(InspectStmt *Inspect, ParsedStmtContext StmtCtx);
+  StmtResult ParseWildcardPattern(ParsedStmtContext StmtCtx);
   StmtResult ParseIdentifierPattern(InspectStmt *Inspect, ParsedStmtContext StmtCtx);
   StmtResult ParseExpressionPattern(InspectStmt *Inspect, ParsedStmtContext StmtCtx, Expr *Condition);
   StmtResult ParseStructuredBindingPattern(InspectStmt *Inspect, ParsedStmtContext StmtCtx);

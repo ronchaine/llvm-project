@@ -164,7 +164,7 @@ InspectStmt *InspectStmt::Create(const ASTContext &Ctx, Stmt *Init,
 InspectStmt *InspectStmt::CreateEmpty(const ASTContext &Ctx, bool HasInit, bool HasVar) {
   void *Mem = Ctx.Allocate(
     totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr),
-    alignof(SwitchStmt));
+    alignof(InspectStmt));
   return new (Mem) InspectStmt(EmptyShell(), HasInit, HasVar);
 }
 
