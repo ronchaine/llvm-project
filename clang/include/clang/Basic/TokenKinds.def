@@ -426,6 +426,7 @@ KEYWORD(char8_t                     , CHAR8SUPPORT)
 
 // C++ P2688 / pattern matching keywords.
 PATMAT_KEYWORD(match)
+PATMAT_KEYWORD(__)
 PATMAT_KEYWORD(let)
 
 // C11 Extension
