@@ -8821,7 +8821,8 @@ public:
   StmtResult ActOnStartOfInspectStmt(SourceLocation InspectLoc,
                                      Stmt *InitStmt,
                                      ConditionResult Cond);
-  StmtResult ActOnFinishInspectStmt(SourceLocation InspectLoc, Stmt *Inspect);
+  StmtResult ActOnFinishInspectStmt(SourceLocation InspectLoc, Stmt *Inspect,
+                                    Stmt *Body);
 
   /// DiagnoseAssignmentEnum - Warn if assignment to enum is a constant
   /// integer not in the range of enum values.

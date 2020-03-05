@@ -2013,46 +2013,30 @@ StmtResult Parser::ParseInspectStatement(ParsedAttributesWithRange &attrs,
   // inspect (...) { }
   //               ^
 
-  StmtResult InspectResult = Actions.ActOnStartOfInspectStmt(InspectLoc, Init.get(), Cond);
+  StmtResult Inspect = Actions.ActOnStartOfInspectStmt(InspectLoc, Init.get(), Cond);
 
-  if (InspectResult.isInvalid()) {
+  if (Inspect.isInvalid()) {
     // Skip the inspect body.
     if (Tok.is(tok::l_brace)) {
       ConsumeBrace();
       SkipUntil(tok::r_brace);
     } else
       SkipUntil(tok::semi);
-    return InspectResult;
+    return Inspect;
   }
-
-  InspectStmt *Inspect = dyn_cast<InspectStmt>(InspectResult.get());
 
   // See comments in ParseIfStatement for why we create a scope for the
   // condition and a new scope for substatement in C++.
   ParseScope InnerScope(this, Scope::DeclScope, true, Tok.is(tok::l_brace));
 
-  // consume opening brace
-  ConsumeBrace();
-  
-  while (!Tok.is(tok::r_brace)) {
-    StmtResult PatternResult = ParsePatternStatement(Inspect, attrs, StmtCtx);
-
-    if (PatternResult.isInvalid()) {
-      // TODO: diagnostics
-      break;
-    }
-
-    Inspect->addPattern(cast<PatternStmt>(PatternResult.get()));
-  }
-
-  // consume closing brace
-  ConsumeBrace();
+  // Read the body statement.
+  StmtResult Body(ParseStatement(TrailingElseLoc));
 
   // Pop the scopes.
   InnerScope.Exit();
   InspectScope.Exit();
 
-  return Actions.ActOnFinishInspectStmt(InspectLoc, Inspect);
+  return Actions.ActOnFinishInspectStmt(InspectLoc, Inspect.get(), Body.get());
 }
 
 /// ParseWhileStatement

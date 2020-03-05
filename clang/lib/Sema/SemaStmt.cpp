@@ -1206,13 +1206,16 @@ StmtResult Sema::ActOnStartOfInspectStmt(SourceLocation InspectLoc, Stmt *InitSt
 }
 
 StmtResult
-Sema::ActOnFinishInspectStmt(SourceLocation InspectLoc, Stmt *Inspect) {
+Sema::ActOnFinishInspectStmt(SourceLocation InspectLoc, Stmt *Inspect, Stmt *BodyStmt) {
 
   InspectStmt *IS = cast<InspectStmt>(Inspect);
   assert(IS == getCurFunction()->InspectStack.back().getPointer() &&
     "inspect stack missing push/pop!");
 
   getCurFunction()->InspectStack.pop_back();
+
+  if (!BodyStmt) return StmtError();
+  IS->setBody(BodyStmt, InspectLoc);
 
   Expr *CondExpr = IS->getCond();
   if (!CondExpr) return StmtError();
