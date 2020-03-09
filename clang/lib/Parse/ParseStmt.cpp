@@ -179,6 +179,25 @@ StmtResult Parser::ParseStatementOrDeclarationAfterAttributes(
   StmtResult Res;
   SourceLocation GNUAttributeLoc;
 
+  auto IsWildcardPatternIdentifier = [](IdentifierInfo* II, Scope *S) {
+    if (!II || !S)
+      return false;
+
+    // Alternatively, we could make wildcard a pattern matching
+    // keyword in TokenKinds.td: PATMAT_KEYWORD(__) and then
+    // use revertTokenIDToIdentifier to get back a tok::identifier.
+    // The down side is that it involves teaching all places that
+    // take an identifier to also handle the wildcard, as to apply
+    // the revert when necessary.
+    if (II->getName() != "__")
+      return false;
+
+    if (S->isInspectScope())
+      return true;
+
+    return false;
+  };
+
   // Cases in this switch statement should fall through if the parser expects
   // the token to end in a semicolon (in which case SemiError should be set),
   // or they directly 'return;' if not.
@@ -200,11 +219,8 @@ Retry:
   case tok::identifier:
   ParseIdentifier: {
     // C++ P2688 / pattern matching: wildcard inspect pattern.
-    IdentifierInfo* II = Tok.getIdentifierInfo();
-    auto *CurrScope = getCurScope();
-    if (CurrScope && CurrScope->isInspectScope() &&
-        II && II->isCPlusPlusKeyword(getLangOpts()) &&
-        II->getTokenID() == tok::kw___)
+    if (getLangOpts().PatternMatching &&
+        IsWildcardPatternIdentifier(Tok.getIdentifierInfo(), getCurScope()))
       return ParseWildcardPattern(StmtCtx);
 
     Token Next = NextToken();
@@ -869,7 +885,7 @@ StmtResult Parser::ParsePatternStatement(InspectStmt *Inspect,
 ///
 StmtResult Parser::ParseWildcardPattern(ParsedStmtContext StmtCtx) {
   IdentifierInfo* II = Tok.getIdentifierInfo();
-  assert(II && II->getTokenID() == tok::kw___ && "Not a wildcard pattern!");
+  assert(II && II->getName() == "__" && "Not a wildcard pattern!");
   assert(getCurScope()->isInspectScope() &&
          "Wildcard pattern should be in inspect scope");
   SourceLocation WildcardLoc = ConsumeToken();
@@ -878,7 +894,7 @@ StmtResult Parser::ParseWildcardPattern(ParsedStmtContext StmtCtx) {
   // FIXME: move this to its own method.
   bool IsConstexpr = false; // FIXME: check whether inspect has IsConst
   Sema::ConditionResult Cond;
-  SourceLocation IfLoc = ConsumeToken();  // eat the 'if'.
+  SourceLocation IfLoc;
   if (Tok.is(tok::kw_if)) {
     IfLoc = ConsumeToken(); // eat the 'if'.
     if (Tok.isNot(tok::l_paren)) {
