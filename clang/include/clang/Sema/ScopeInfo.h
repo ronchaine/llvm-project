@@ -119,7 +119,7 @@ public:
   /// initializer, or anything else that can't be jumped past.
   bool HasBranchProtectedScope : 1;
 
-  /// Whether this function contains any switches or direct gotos.
+  /// Whether this function contains any switches, inspects or direct gotos.
   bool HasBranchIntoScope : 1;
 
   /// Whether this function contains any indirect gotos.
