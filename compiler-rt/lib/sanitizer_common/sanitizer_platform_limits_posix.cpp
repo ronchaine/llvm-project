@@ -57,8 +57,10 @@
 #include <net/route.h>
 #endif
 
-#if !SANITIZER_ANDROID
+#if SANITIZER_GNU
 #include <fstab.h>
+#endif
+#if !SANITIZER_ANDROID
 #include <sys/mount.h>
 #include <sys/timeb.h>
 #include <utmpx.h>
@@ -109,7 +111,7 @@ typedef struct user_fpregs elf_fpregset_t;
 #include <wordexp.h>
 #endif
 
-#if SANITIZER_LINUX && !SANITIZER_ANDROID
+#if SANITIZER_GNU
 #include <glob.h>
 #include <obstack.h>
 #include <mqueue.h>
@@ -140,17 +142,32 @@ typedef struct user_fpregs elf_fpregset_t;
 #include <linux/serial.h>
 #include <sys/msg.h>
 #include <sys/ipc.h>
-#include <crypt.h>
-#endif // SANITIZER_LINUX && !SANITIZER_ANDROID
+#endif // SANITIZER_GNU
 
-#if SANITIZER_ANDROID
+#if SANITIZER_LINUX && !SANITIZER_GNU
 #include <linux/kd.h>
 #include <linux/mtio.h>
 #include <linux/ppp_defs.h>
 #include <linux/if_ppp.h>
+#if !SANITIZER_ANDROID
+#include <linux/ax25.h>
+#include <linux/cyclades.h>
+#include <linux/ipx.h>
+// #include <linux/mtio.h> doesn't have the required mtconfiginfo
+// #include <linux/netrom.h> doesn't have the required nr_parms_struct
+#include <linux/scc.h>
+#include <linux/mroute.h>
+#include <linux/if_eql.h>
+#include <linux/lp.h>
+#include <linux/if_plip.h>
+#include <linux/netrom.h>
+#include <linux/ipc.h>
+#include <linux/shm.h>
 #endif
+#endif // SANITIZER_LINUX && !SANITIZER_GNU
 
 #if SANITIZER_LINUX
+#include <crypt.h>
 #include <link.h>
 #include <sys/vfs.h>
 #include <sys/epoll.h>
@@ -201,12 +218,12 @@ namespace __sanitizer {
   unsigned struct_statfs64_sz = sizeof(struct statfs64);
 #endif // SANITIZER_MAC && !SANITIZER_IOS
 
-#if !SANITIZER_ANDROID
+#if SANITIZER_GNU
   unsigned struct_fstab_sz = sizeof(struct fstab);
   unsigned struct_statfs_sz = sizeof(struct statfs);
   unsigned struct_sockaddr_sz = sizeof(struct sockaddr);
   unsigned ucontext_t_sz = sizeof(ucontext_t);
-#endif // !SANITIZER_ANDROID
+#endif // SANITIZER_GNU
 
 #if SANITIZER_LINUX
   unsigned struct_epoll_event_sz = sizeof(struct epoll_event);
@@ -231,7 +248,7 @@ namespace __sanitizer {
   // has been removed from glibc 2.28.
 #if defined(__aarch64__) || defined(__s390x__) || defined (__mips64) \
   || defined(__powerpc64__) || defined(__arch64__) || defined(__sparcv9) \
-  || defined(__x86_64__) || (defined(__riscv) && __riscv_xlen == 64)
+  || defined(__x86_64__)
 #define SIZEOF_STRUCT_USTAT 32
 #elif defined(__arm__) || defined(__i386__) || defined(__mips__) \
   || defined(__powerpc__) || defined(__s390__) || defined(__sparc__)
@@ -245,12 +262,12 @@ namespace __sanitizer {
   unsigned struct_crypt_data_sz = sizeof(struct crypt_data);
 #endif // SANITIZER_LINUX && !SANITIZER_ANDROID
 
-#if SANITIZER_LINUX && !SANITIZER_ANDROID
+#if SANITIZER_GNU
   unsigned struct_timex_sz = sizeof(struct timex);
   unsigned struct_msqid_ds_sz = sizeof(struct msqid_ds);
   unsigned struct_mq_attr_sz = sizeof(struct mq_attr);
   unsigned struct_statvfs_sz = sizeof(struct statvfs);
-#endif // SANITIZER_LINUX && !SANITIZER_ANDROID
+#endif // SANITIZER_GNU
 
   const uptr sig_ign = (uptr)SIG_IGN;
   const uptr sig_dfl = (uptr)SIG_DFL;
@@ -262,7 +279,7 @@ namespace __sanitizer {
 #endif
 
 
-#if SANITIZER_LINUX && !SANITIZER_ANDROID
+#if SANITIZER_GNU
   unsigned struct_shminfo_sz = sizeof(struct shminfo);
   unsigned struct_shm_info_sz = sizeof(struct shm_info);
   int shmctl_ipc_stat = (int)IPC_STAT;
@@ -298,12 +315,12 @@ unsigned struct_ElfW_Phdr_sz = sizeof(ElfW(Phdr));
 unsigned struct_ElfW_Phdr_sz = sizeof(Elf_Phdr);
 #endif
 
-#if SANITIZER_LINUX && !SANITIZER_ANDROID
+#if SANITIZER_GNU
   int glob_nomatch = GLOB_NOMATCH;
   int glob_altdirfunc = GLOB_ALTDIRFUNC;
 #endif
 
-#if SANITIZER_LINUX && !SANITIZER_ANDROID && \
+#if SANITIZER_GNU && \
     (defined(__i386) || defined(__x86_64) || defined(__mips64) || \
       defined(__powerpc64__) || defined(__aarch64__) || defined(__arm__) || \
       defined(__s390__))
@@ -417,7 +434,9 @@ unsigned struct_ElfW_Phdr_sz = sizeof(Elf_Phdr);
   unsigned struct_input_id_sz = sizeof(struct input_id);
   unsigned struct_mtpos_sz = sizeof(struct mtpos);
   unsigned struct_rtentry_sz = sizeof(struct rtentry);
+#if SANITIZER_GNU
   unsigned struct_termio_sz = sizeof(struct termio);
+#endif
   unsigned struct_vt_consize_sz = sizeof(struct vt_consize);
   unsigned struct_vt_sizes_sz = sizeof(struct vt_sizes);
   unsigned struct_vt_stat_sz = sizeof(struct vt_stat);
@@ -443,7 +462,9 @@ unsigned struct_ElfW_Phdr_sz = sizeof(Elf_Phdr);
 #endif // SANITIZER_LINUX
 
 #if SANITIZER_LINUX && !SANITIZER_ANDROID
+#if SANITIZER_GNU
   unsigned struct_ax25_parms_struct_sz = sizeof(struct ax25_parms_struct);
+#endif
   unsigned struct_cyclades_monitor_sz = sizeof(struct cyclades_monitor);
 #if EV_VERSION > (0x010000)
   unsigned struct_input_keymap_entry_sz = sizeof(struct input_keymap_entry);
@@ -455,13 +476,17 @@ unsigned struct_ElfW_Phdr_sz = sizeof(Elf_Phdr);
   unsigned struct_kbentry_sz = sizeof(struct kbentry);
   unsigned struct_kbkeycode_sz = sizeof(struct kbkeycode);
   unsigned struct_kbsentry_sz = sizeof(struct kbsentry);
+#if SANITIZER_GNU
   unsigned struct_mtconfiginfo_sz = sizeof(struct mtconfiginfo);
   unsigned struct_nr_parms_struct_sz = sizeof(struct nr_parms_struct);
+#endif
   unsigned struct_scc_modem_sz = sizeof(struct scc_modem);
   unsigned struct_scc_stat_sz = sizeof(struct scc_stat);
+#if SANITIZER_GNU
   unsigned struct_serial_multiport_struct_sz
       = sizeof(struct serial_multiport_struct);
   unsigned struct_serial_struct_sz = sizeof(struct serial_struct);
+#endif
   unsigned struct_sockaddr_ax25_sz = sizeof(struct sockaddr_ax25);
   unsigned struct_unimapdesc_sz = sizeof(struct unimapdesc);
   unsigned struct_unimapinit_sz = sizeof(struct unimapinit);
@@ -477,7 +502,11 @@ unsigned struct_ElfW_Phdr_sz = sizeof(Elf_Phdr);
   unsigned struct_sioc_vif_req_sz = sizeof(struct sioc_vif_req);
 #endif
 
+#if defined(BUFSIZ)
   const unsigned long __sanitizer_bufsiz = BUFSIZ;
+#else
+  const unsigned long __sanitizer_bufsiz = 4096;
+#endif
 
   const unsigned IOCTL_NOT_PRESENT = 0;
 
@@ -869,31 +898,41 @@ unsigned struct_ElfW_Phdr_sz = sizeof(Elf_Phdr);
   unsigned IOCTL_LPSETIRQ = LPSETIRQ;
   unsigned IOCTL_LPTIME = LPTIME;
   unsigned IOCTL_LPWAIT = LPWAIT;
+#if SANITIZER_GNU
   unsigned IOCTL_MTIOCGETCONFIG = MTIOCGETCONFIG;
   unsigned IOCTL_MTIOCSETCONFIG = MTIOCSETCONFIG;
+#endif
   unsigned IOCTL_PIO_CMAP = PIO_CMAP;
   unsigned IOCTL_PIO_FONT = PIO_FONT;
   unsigned IOCTL_PIO_UNIMAP = PIO_UNIMAP;
   unsigned IOCTL_PIO_UNIMAPCLR = PIO_UNIMAPCLR;
   unsigned IOCTL_PIO_UNISCRNMAP = PIO_UNISCRNMAP;
+#if SANITIZER_GNU
   unsigned IOCTL_SCSI_IOCTL_GET_IDLUN = SCSI_IOCTL_GET_IDLUN;
   unsigned IOCTL_SCSI_IOCTL_PROBE_HOST = SCSI_IOCTL_PROBE_HOST;
   unsigned IOCTL_SCSI_IOCTL_TAGGED_DISABLE = SCSI_IOCTL_TAGGED_DISABLE;
   unsigned IOCTL_SCSI_IOCTL_TAGGED_ENABLE = SCSI_IOCTL_TAGGED_ENABLE;
+#endif
   unsigned IOCTL_SIOCAIPXITFCRT = SIOCAIPXITFCRT;
   unsigned IOCTL_SIOCAIPXPRISLT = SIOCAIPXPRISLT;
   unsigned IOCTL_SIOCAX25ADDUID = SIOCAX25ADDUID;
   unsigned IOCTL_SIOCAX25DELUID = SIOCAX25DELUID;
+#if SANITIZER_GNU
   unsigned IOCTL_SIOCAX25GETPARMS = SIOCAX25GETPARMS;
+#endif
   unsigned IOCTL_SIOCAX25GETUID = SIOCAX25GETUID;
   unsigned IOCTL_SIOCAX25NOUID = SIOCAX25NOUID;
+#if SANITIZER_GNU
   unsigned IOCTL_SIOCAX25SETPARMS = SIOCAX25SETPARMS;
+#endif
   unsigned IOCTL_SIOCDEVPLIP = SIOCDEVPLIP;
   unsigned IOCTL_SIOCIPXCFGDATA = SIOCIPXCFGDATA;
   unsigned IOCTL_SIOCNRDECOBS = SIOCNRDECOBS;
+#if SANITIZER_GNU
   unsigned IOCTL_SIOCNRGETPARMS = SIOCNRGETPARMS;
   unsigned IOCTL_SIOCNRRTCTL = SIOCNRRTCTL;
   unsigned IOCTL_SIOCNRSETPARMS = SIOCNRSETPARMS;
+#endif
   unsigned IOCTL_TIOCGSERIAL = TIOCGSERIAL;
   unsigned IOCTL_TIOCSERGETMULTI = TIOCSERGETMULTI;
   unsigned IOCTL_TIOCSERSETMULTI = TIOCSERSETMULTI;
@@ -964,7 +1003,7 @@ CHECK_SIZE_AND_OFFSET(dl_phdr_info, dlpi_phdr);
 CHECK_SIZE_AND_OFFSET(dl_phdr_info, dlpi_phnum);
 #endif // SANITIZER_LINUX || SANITIZER_FREEBSD
 
-#if (SANITIZER_LINUX || SANITIZER_FREEBSD) && !SANITIZER_ANDROID
+#if (SANITIZER_GNU || SANITIZER_FREEBSD)
 CHECK_TYPE_SIZE(glob_t);
 CHECK_SIZE_AND_OFFSET(glob_t, gl_pathc);
 CHECK_SIZE_AND_OFFSET(glob_t, gl_pathv);
@@ -998,6 +1037,7 @@ CHECK_TYPE_SIZE(iovec);
 CHECK_SIZE_AND_OFFSET(iovec, iov_base);
 CHECK_SIZE_AND_OFFSET(iovec, iov_len);
 
+#if SANITIZER_GNU || SANITIZER_ANDROID
 CHECK_TYPE_SIZE(msghdr);
 CHECK_SIZE_AND_OFFSET(msghdr, msg_name);
 CHECK_SIZE_AND_OFFSET(msghdr, msg_namelen);
@@ -1011,6 +1051,11 @@ CHECK_TYPE_SIZE(cmsghdr);
 CHECK_SIZE_AND_OFFSET(cmsghdr, cmsg_len);
 CHECK_SIZE_AND_OFFSET(cmsghdr, cmsg_level);
 CHECK_SIZE_AND_OFFSET(cmsghdr, cmsg_type);
+#endif
+
+#ifndef __GLIBC_PREREQ
+#define __GLIBC_PREREQ(x, y) 0
+#endif
 
 #if SANITIZER_LINUX && (__ANDROID_API__ >= 21 || __GLIBC_PREREQ (2, 14))
 CHECK_TYPE_SIZE(mmsghdr);
@@ -1116,7 +1161,7 @@ CHECK_SIZE_AND_OFFSET(mntent, mnt_passno);
 
 CHECK_TYPE_SIZE(ether_addr);
 
-#if (SANITIZER_LINUX || SANITIZER_FREEBSD) && !SANITIZER_ANDROID
+#if SANITIZER_GNU || SANITIZER_FREEBSD
 CHECK_TYPE_SIZE(ipc_perm);
 # if SANITIZER_FREEBSD
 CHECK_SIZE_AND_OFFSET(ipc_perm, key);
@@ -1178,7 +1223,8 @@ CHECK_SIZE_AND_OFFSET(ifaddrs, ifa_dstaddr);
 CHECK_SIZE_AND_OFFSET(ifaddrs, ifa_data);
 #endif
 
-#if SANITIZER_LINUX
+// mallinfo is annoying, cause it's SVID instead of POSIX or C standard...
+#if SANITIZER_GNU
 COMPILER_CHECK(sizeof(__sanitizer_struct_mallinfo) == sizeof(struct mallinfo));
 #endif
 
@@ -1228,7 +1274,8 @@ COMPILER_CHECK(__sanitizer_XDR_DECODE == XDR_DECODE);
 COMPILER_CHECK(__sanitizer_XDR_FREE == XDR_FREE);
 #endif
 
-#if SANITIZER_LINUX && !SANITIZER_ANDROID
+// #if SANITIZER_LINUX && !SANITIZER_ANDROID
+#if SANITIZER_GNU
 COMPILER_CHECK(sizeof(__sanitizer_FILE) <= sizeof(FILE));
 CHECK_SIZE_AND_OFFSET(FILE, _flags);
 CHECK_SIZE_AND_OFFSET(FILE, _IO_read_ptr);
@@ -1247,7 +1294,7 @@ CHECK_SIZE_AND_OFFSET(FILE, _chain);
 CHECK_SIZE_AND_OFFSET(FILE, _fileno);
 #endif
 
-#if SANITIZER_LINUX && !SANITIZER_ANDROID
+#if SANITIZER_GNU
 COMPILER_CHECK(sizeof(__sanitizer__obstack_chunk) <= sizeof(_obstack_chunk));
 CHECK_SIZE_AND_OFFSET(_obstack_chunk, limit);
 CHECK_SIZE_AND_OFFSET(_obstack_chunk, prev);
