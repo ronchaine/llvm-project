@@ -189,51 +189,63 @@ void InspectStmt::setConditionVariable(const ASTContext &Ctx, VarDecl *V) {
     DeclStmt(DeclGroupRef(V), VarRange.getBegin(), VarRange.getEnd());
 }
 
-WildcardPatternStmt *WildcardPatternStmt::Create(const ASTContext &Ctx, SourceLocation wildcardLoc, 
-                                                 SourceLocation colonLoc, Expr *patternGuard) {
-  bool hasPatternGuard = patternGuard != nullptr;
+WildcardPatternStmt *WildcardPatternStmt::Create(const ASTContext &Ctx,
+                                                 SourceLocation WildcardLoc,
+                                                 SourceLocation ColonLoc,
+                                                 Expr *PatternGuard) {
+  bool HasPatternGuard = PatternGuard != nullptr;
 
   void *Mem = Ctx.Allocate(
-    totalSizeToAlloc<Stmt *, Expr *>(NumMandatoryStmtPtr, hasPatternGuard),
+    totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr + HasPatternGuard),
     alignof(WildcardPatternStmt));
-  return new (Mem) WildcardPatternStmt(wildcardLoc, colonLoc, nullptr, patternGuard);
+  return new (Mem) WildcardPatternStmt(WildcardLoc, ColonLoc, nullptr,
+                                       PatternGuard);
 }
 
-WildcardPatternStmt *WildcardPatternStmt::CreateEmpty(const ASTContext &Ctx, bool HasPatternGuard) {
+WildcardPatternStmt *WildcardPatternStmt::CreateEmpty(const ASTContext &Ctx,
+                                                      bool HasPatternGuard) {
   void *Mem = Ctx.Allocate(
-    totalSizeToAlloc<Stmt *, Expr *>(NumMandatoryStmtPtr, HasPatternGuard),
+    totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr + HasPatternGuard),
     alignof(WildcardPatternStmt));
   return new (Mem) WildcardPatternStmt(EmptyShell(), HasPatternGuard);
 }
 
-IdentifierPatternStmt *IdentifierPatternStmt::Create(const ASTContext &Ctx, SourceLocation caseLoc,
-                                                     SourceLocation colonLoc, Expr *patternGuard) {
-  bool HasPatternGuard = patternGuard != nullptr;
+IdentifierPatternStmt *IdentifierPatternStmt::Create(const ASTContext &Ctx,
+                                                     SourceLocation CaseLoc,
+                                                     SourceLocation ColonLoc,
+                                                     Expr *PatternGuard) {
+  bool HasPatternGuard = PatternGuard != nullptr;
 
   void *Mem = Ctx.Allocate(
     totalSizeToAlloc<Stmt *, Expr *>(NumMandatoryStmtPtr, HasPatternGuard),
     alignof(IdentifierPatternStmt));
-  return new (Mem) IdentifierPatternStmt(caseLoc, colonLoc, nullptr, nullptr, patternGuard);
+  return new (Mem) IdentifierPatternStmt(CaseLoc, ColonLoc, nullptr, nullptr,
+                                         PatternGuard);
 }
 
-IdentifierPatternStmt *IdentifierPatternStmt::CreateEmpty(const ASTContext &Ctx, bool HasPatternGuard) {
+IdentifierPatternStmt *IdentifierPatternStmt::CreateEmpty(const ASTContext &Ctx,
+                                                          bool HasPatternGuard) {
   void *Mem = Ctx.Allocate(
     totalSizeToAlloc<Stmt *, Expr *>(NumMandatoryStmtPtr, HasPatternGuard),
     alignof(IdentifierPatternStmt));
   return new (Mem) IdentifierPatternStmt(EmptyShell(), HasPatternGuard);
 }
 
-ExpressionPatternStmt *ExpressionPatternStmt::Create(const ASTContext &Ctx, SourceLocation caseLoc, 
-                                                     SourceLocation colonLoc, Expr *patternGuard) {
-  bool hasPatternGuard = patternGuard != nullptr;
+ExpressionPatternStmt *ExpressionPatternStmt::Create(const ASTContext &Ctx,
+                                                     SourceLocation CaseLoc,
+                                                     SourceLocation ColonLoc,
+                                                     Expr *PatternGuard) {
+  bool HasPatternGuard = PatternGuard != nullptr;
 
   void *Mem = Ctx.Allocate(
-    totalSizeToAlloc<Stmt *, Expr *>(NumMandatoryStmtPtr, hasPatternGuard),
+    totalSizeToAlloc<Stmt *, Expr *>(NumMandatoryStmtPtr, HasPatternGuard),
     alignof(ExpressionPatternStmt));
-  return new (Mem) ExpressionPatternStmt(caseLoc, colonLoc, nullptr, nullptr, patternGuard);
+  return new (Mem) ExpressionPatternStmt(CaseLoc, ColonLoc, nullptr, nullptr,
+                                         PatternGuard);
 }
 
-ExpressionPatternStmt *ExpressionPatternStmt::CreateEmpty(const ASTContext &Ctx, bool HasPatternGuard) {
+ExpressionPatternStmt *ExpressionPatternStmt::CreateEmpty(const ASTContext &Ctx,
+                                                          bool HasPatternGuard) {
   void *Mem = Ctx.Allocate(
     totalSizeToAlloc<Stmt *, Expr *>(NumMandatoryStmtPtr, HasPatternGuard),
     alignof(ExpressionPatternStmt));
