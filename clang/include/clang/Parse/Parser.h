@@ -2126,17 +2126,22 @@ private:
   StmtResult ParseExprStatement(ParsedStmtContext StmtCtx);
   StmtResult ParseLabeledStatement(ParsedAttributes &Attrs,
                                    ParsedStmtContext StmtCtx);
-  StmtResult ParsePatternStatement(InspectStmt *Inspect, 
+  StmtResult ParsePatternStatement(InspectStmt *Inspect,
                                    ParsedAttributesWithRange &attrs,
                                    ParsedStmtContext StmtCtx);
   StmtResult ParseWildcardPattern(ParsedStmtContext StmtCtx);
-  StmtResult ParseIdentifierPattern(InspectStmt *Inspect, ParsedStmtContext StmtCtx);
-  StmtResult ParseExpressionPattern(InspectStmt *Inspect, ParsedStmtContext StmtCtx, Expr *Condition);
-  StmtResult ParseStructuredBindingPattern(InspectStmt *Inspect, ParsedStmtContext StmtCtx);
+  StmtResult ParseIdentifierPattern(InspectStmt *Inspect,
+                                    ParsedStmtContext StmtCtx);
+  StmtResult ParseExpressionPattern(InspectStmt *Inspect,
+                                    ParsedStmtContext StmtCtx, Expr *Condition);
+  StmtResult ParseStructuredBindingPattern(InspectStmt *Inspect,
+                                           ParsedStmtContext StmtCtx);
   StmtResult ParseTypedPattern(InspectStmt *Inspect, ParsedStmtContext StmtCtx);
   StmtResult ParseCasePattern(InspectStmt *Inspect, ParsedStmtContext StmtCtx);
-  StmtResult ParseBindingPattern(InspectStmt *Inspect, ParsedStmtContext StmtCtx);
-  StmtResult ParseParenthesisedPattern(InspectStmt *Inspect, ParsedStmtContext StmtCtx);
+  StmtResult ParseBindingPattern(InspectStmt *Inspect,
+                                 ParsedStmtContext StmtCtx);
+  StmtResult ParseParenthesisedPattern(InspectStmt *Inspect,
+                                       ParsedStmtContext StmtCtx);
 
   StmtResult ParseCaseStatement(ParsedStmtContext StmtCtx,
                                 bool MissingCase = false,
@@ -2157,7 +2162,7 @@ private:
   StmtResult ParseIfStatement(SourceLocation *TrailingElseLoc);
   StmtResult ParseSwitchStatement(SourceLocation *TrailingElseLoc);
   StmtResult ParseInspectStatement(ParsedAttributesWithRange &attrs,
-                                   ParsedStmtContext StmtCtx, 
+                                   ParsedStmtContext StmtCtx,
                                    SourceLocation *TrailingElseLoc);
   StmtResult ParseWhileStatement(SourceLocation *TrailingElseLoc);
   StmtResult ParseDoStatement();

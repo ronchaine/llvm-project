@@ -8805,21 +8805,15 @@ public:
   ExprResult CheckInspectCondition(SourceLocation InspectLoc, Expr *Cond);
 
   StmtResult ActOnWildcardPattern(SourceLocation WildcardLoc,
-                                  SourceLocation ColonLoc,
-                                  Stmt *SubStmt
+                                  SourceLocation ColonLoc, Stmt *SubStmt
                                   Expr *PatternGuard);
   StmtResult ActOnIdentifierPattern(SourceLocation IdentifierLoc,
-                                    SourceLocation ColonLoc,
-                                    Expr *Condition,
-                                    Stmt *SubStmt,
-                                    Expr *PatternGuard);
+                                    SourceLocation ColonLoc, Expr *Condition,
+                                    Stmt *SubStmt, Expr *PatternGuard);
   StmtResult ActOnExpressionPattern(SourceLocation ExpressionLoc,
-                                    SourceLocation ColonLoc,
-                                    Expr *Condition,
-                                    Stmt *SubStmt,
-                                    Expr *PatternGuard);
-  StmtResult ActOnStartOfInspectStmt(SourceLocation InspectLoc,
-                                     Stmt *InitStmt,
+                                    SourceLocation ColonLoc, Expr *Condition,
+                                    Stmt *SubStmt, Expr *PatternGuard);
+  StmtResult ActOnStartOfInspectStmt(SourceLocation InspectLoc, Stmt *InitStmt,
                                      ConditionResult Cond);
   StmtResult ActOnFinishInspectStmt(SourceLocation InspectLoc, Stmt *Inspect,
                                     Stmt *Body);

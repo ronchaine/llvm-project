@@ -21218,7 +21218,7 @@ Sema::ConditionResult Sema::ActOnCondition(Scope *S, SourceLocation Loc,
     break;
 
   case ConditionKind::Inspect:
-	  Cond = CheckInspectCondition(Loc, SubExpr);
+    Cond = CheckInspectCondition(Loc, SubExpr);
   }
   if (Cond.isInvalid()) {
     Cond = CreateRecoveryExpr(SubExpr->getBeginLoc(), SubExpr->getEndLoc(),

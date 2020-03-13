@@ -566,30 +566,28 @@ Sema::ActOnDefaultStmt(SourceLocation DefaultLoc, SourceLocation ColonLoc,
 }
 
 StmtResult Sema::ActOnWildcardPattern(SourceLocation WildcardLoc,
-                                      SourceLocation ColonLoc,
-                                      Stmt *SubStmt,
+                                      SourceLocation ColonLoc, Stmt *SubStmt,
                                       Expr *PatternGuard) {
 
   if (getCurFunction()->InspectStack.empty())
     return StmtError();
 
-  auto* WPS = WildcardPatternStmt::Create(Context, WildcardLoc, 
-                                          ColonLoc, PatternGuard);
+  auto *WPS =
+      WildcardPatternStmt::Create(Context, WildcardLoc, ColonLoc, PatternGuard);
   WPS->setSubStmt(SubStmt);
   return WPS;
 }
 
 StmtResult Sema::ActOnIdentifierPattern(SourceLocation ConditionLoc,
                                         SourceLocation ColonLoc,
-                                        Expr *Condition,
-                                        Stmt *SubStmt,
+                                        Expr *Condition, Stmt *SubStmt,
                                         Expr *PatternGuard) {
   if (getCurFunction()->InspectStack.empty()) {
     return StmtError();
   }
 
-  auto* IPS = IdentifierPatternStmt::Create(Context, ConditionLoc, 
-                                            ColonLoc, PatternGuard);
+  auto *IPS = IdentifierPatternStmt::Create(Context, ConditionLoc, ColonLoc,
+                                            PatternGuard);
   IPS->setCond(Condition);
   IPS->setSubStmt(SubStmt);
   return IPS;
@@ -597,15 +595,14 @@ StmtResult Sema::ActOnIdentifierPattern(SourceLocation ConditionLoc,
 
 StmtResult Sema::ActOnExpressionPattern(SourceLocation ConditionLoc,
                                         SourceLocation ColonLoc,
-                                        Expr *Condition,
-                                        Stmt *SubStmt,
+                                        Expr *Condition, Stmt *SubStmt,
                                         Expr *PatternGuard) {
   if (getCurFunction()->InspectStack.empty()) {
     return StmtError();
   }
 
-  auto* EPS = ExpressionPatternStmt::Create(Context, ConditionLoc, 
-                                            ColonLoc, PatternGuard);
+  auto *EPS = ExpressionPatternStmt::Create(Context, ConditionLoc, ColonLoc,
+                                            PatternGuard);
   EPS->setCond(Condition);
   EPS->setSubStmt(SubStmt);
   return EPS;
@@ -1193,8 +1190,8 @@ StmtResult Sema::ActOnStartOfSwitchStmt(SourceLocation SwitchLoc,
   return SS;
 }
 
-StmtResult Sema::ActOnStartOfInspectStmt(SourceLocation InspectLoc, Stmt *InitStmt,
-                                         ConditionResult Cond) {
+StmtResult Sema::ActOnStartOfInspectStmt(SourceLocation InspectLoc,
+                                         Stmt *InitStmt, ConditionResult Cond) {
   Expr *CondExpr = Cond.get().second;
   assert((Cond.isInvalid() || CondExpr) && "inspect with no condition");
 
@@ -1206,25 +1203,27 @@ StmtResult Sema::ActOnStartOfInspectStmt(SourceLocation InspectLoc, Stmt *InitSt
   return IS;
 }
 
-StmtResult
-Sema::ActOnFinishInspectStmt(SourceLocation InspectLoc, Stmt *Inspect, Stmt *BodyStmt) {
+StmtResult Sema::ActOnFinishInspectStmt(SourceLocation InspectLoc,
+                                        Stmt *Inspect, Stmt *BodyStmt) {
 
   InspectStmt *IS = cast<InspectStmt>(Inspect);
   assert(IS == getCurFunction()->InspectStack.back().getPointer() &&
-    "inspect stack missing push/pop!");
+         "inspect stack missing push/pop!");
 
   getCurFunction()->InspectStack.pop_back();
 
-  if (!BodyStmt) return StmtError();
+  if (!BodyStmt)
+    return StmtError();
   IS->setBody(BodyStmt, InspectLoc);
 
   Expr *CondExpr = IS->getCond();
-  if (!CondExpr) return StmtError();
+  if (!CondExpr)
+    return StmtError();
 
   return IS;
 }
 
-ExprResult Sema::CheckInspectCondition(SourceLocation InspectLoc, Expr* Cond) {
+ExprResult Sema::CheckInspectCondition(SourceLocation InspectLoc, Expr *Cond) {
   // C99 6.8.4.2p5 - Integer promotions are performed on the controlling expr.
   return UsualUnaryConversions(Cond);
 }

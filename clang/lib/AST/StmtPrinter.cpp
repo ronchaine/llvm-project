@@ -373,7 +373,7 @@ void StmtPrinter::VisitInspectStmt(InspectStmt *Node) {
   Indent() << "inspect (";
   if (Node->getInit())
     PrintInitStmt(Node->getInit(), 8);
-  if (const DeclStmt* DS = Node->getConditionVariableDeclStmt())
+  if (const DeclStmt *DS = Node->getConditionVariableDeclStmt())
     PrintRawDeclStmt(DS);
   else
     PrintExpr(Node->getCond());

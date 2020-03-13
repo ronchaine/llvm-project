@@ -353,11 +353,11 @@ public:
     return Reader->getSwitchCaseWithID(ID);
   }
 
-  void recordInspectPatternID(PatternStmt* SC, unsigned ID) {
+  void recordInspectPatternID(PatternStmt *SC, unsigned ID) {
     Reader->RecordInspectPatternID(SC, ID);
   }
 
-  PatternStmt* getInspectPatternWithID(unsigned ID) {
+  PatternStmt *getInspectPatternWithID(unsigned ID) {
     return Reader->getInspectPatternWithID(ID);
   }
 };

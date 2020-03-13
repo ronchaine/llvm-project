@@ -1002,15 +1002,15 @@ private:
 
   SwitchCaseMapTy *CurrSwitchCaseStmts;
 
-  using InspectPatternMapTy = llvm::DenseMap<unsigned, PatternStmt*>;
+  using InspectPatternMapTy = llvm::DenseMap<unsigned, PatternStmt *>;
 
   /// Mapping from inspect pattern IDs in the chain to PatternStmt statements
   ///
-  /// Statements usually don't have IDs, but inspect patterns need them, so that the
-  /// inspect statement can refer to them.
+  /// Statements usually don't have IDs, but inspect patterns need them, so that
+  /// the inspect statement can refer to them.
   InspectPatternMapTy InspectPatternStmts;
 
-  InspectPatternMapTy* CurrInspectPatternStmts;
+  InspectPatternMapTy *CurrInspectPatternStmts;
 
   /// The number of source location entries de-serialized from
   /// the PCH file.
@@ -2395,9 +2395,9 @@ public:
 
   void ClearSwitchCaseIDs();
 
-  void RecordInspectPatternID(PatternStmt* SC, unsigned ID);
+  void RecordInspectPatternID(PatternStmt *SC, unsigned ID);
 
-  PatternStmt* getInspectPatternWithID(unsigned ID);
+  PatternStmt *getInspectPatternWithID(unsigned ID);
 
   void ClearInspectPatternIDs();
 

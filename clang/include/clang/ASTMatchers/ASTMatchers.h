@@ -2365,7 +2365,8 @@ extern const internal::VariadicDynCastAllOfMatcher<Stmt, DefaultStmt>
 /// \endcode
 /// inspectStmt()
 ///   matches 'inspect(a)'.
-extern const internal::VariadicDynCastAllOfMatcher<Stmt, InspectStmt> inspectStmt;
+extern const internal::VariadicDynCastAllOfMatcher<Stmt, InspectStmt>
+    inspectStmt;
 
 /// Matches pattern statements inside inspect statements.
 ///
@@ -2375,7 +2376,8 @@ extern const internal::VariadicDynCastAllOfMatcher<Stmt, InspectStmt> inspectStm
 /// \endcode
 /// switchCase()
 ///   matches 'b: ', '0:' and '__:'
-extern const internal::VariadicDynCastAllOfMatcher<Stmt, PatternStmt> patternStmt;
+extern const internal::VariadicDynCastAllOfMatcher<Stmt, PatternStmt>
+    patternStmt;
 
 /// Matches wildcard pattern statements inside inspect statements.
 ///
@@ -2385,7 +2387,8 @@ extern const internal::VariadicDynCastAllOfMatcher<Stmt, PatternStmt> patternStm
 /// \endcode
 /// wildcardPatternStmt()
 ///   matches '__:'.
-extern const internal::VariadicDynCastAllOfMatcher<Stmt, WildcardPatternStmt> wildcardPatternStmt;
+extern const internal::VariadicDynCastAllOfMatcher<Stmt, WildcardPatternStmt>
+    wildcardPatternStmt;
 
 /// Matches identifier pattern statements inside inspect statements.
 ///
@@ -2395,7 +2398,8 @@ extern const internal::VariadicDynCastAllOfMatcher<Stmt, WildcardPatternStmt> wi
 /// \endcode
 /// identifierPatternStmt()
 ///   matches 'b:'.
-extern const internal::VariadicDynCastAllOfMatcher<Stmt, IdentifierPatternStmt> identifierPatternStmt;
+extern const internal::VariadicDynCastAllOfMatcher<Stmt, IdentifierPatternStmt>
+    identifierPatternStmt;
 
 /// Matches expression pattern statements inside inspect statements.
 ///
@@ -2405,7 +2409,8 @@ extern const internal::VariadicDynCastAllOfMatcher<Stmt, IdentifierPatternStmt> 
 /// \endcode
 /// expressionPatternStmt()
 ///   matches '0:'.
-extern const internal::VariadicDynCastAllOfMatcher<Stmt, ExpressionPatternStmt> expressionPatternStmt;
+extern const internal::VariadicDynCastAllOfMatcher<Stmt, ExpressionPatternStmt>
+    expressionPatternStmt;
 
 /// Matches compound statements.
 ///
@@ -5648,11 +5653,11 @@ AST_POLYMORPHIC_MATCHER_P(hasInitStatement,
 /// \code
 ///   if (true) {}
 /// \endcode
-AST_POLYMORPHIC_MATCHER_P(
-    hasCondition,
-    AST_POLYMORPHIC_SUPPORTED_TYPES(IfStmt, ForStmt, WhileStmt, DoStmt,
-                                    SwitchStmt, InspectStmt, AbstractConditionalOperator),
-    internal::Matcher<Expr>, InnerMatcher) {
+AST_POLYMORPHIC_MATCHER_P(hasCondition,
+                          AST_POLYMORPHIC_SUPPORTED_TYPES(
+                              IfStmt, ForStmt, WhileStmt, DoStmt, SwitchStmt,
+                              InspectStmt, AbstractConditionalOperator),
+                          internal::Matcher<Expr>, InnerMatcher) {
   const Expr *const Condition = Node.getCond();
   return (Condition != nullptr &&
           InnerMatcher.matches(*Condition, Finder, Builder));
@@ -7949,13 +7954,13 @@ AST_MATCHER_P(SwitchStmt, forEachSwitchCase, internal::Matcher<SwitchCase>,
 /// \code
 ///   inspect (a) { }
 /// \endcode
-AST_MATCHER_P(InspectStmt, forEachInspectPattern, internal::Matcher<PatternStmt>,
-  InnerMatcher) {
+AST_MATCHER_P(InspectStmt, forEachInspectPattern,
+              internal::Matcher<PatternStmt>, InnerMatcher) {
   BoundNodesTreeBuilder Result;
 
   bool Matched = false;
   for (const PatternStmt *PS = Node.getPatternList(); PS;
-    PS = PS->getNextPattern()) {
+       PS = PS->getNextPattern()) {
     BoundNodesTreeBuilder PatternBuilder(*Builder);
     bool PatternMatched = InnerMatcher.matches(*PS, Finder, &PatternBuilder);
     if (PatternMatched) {

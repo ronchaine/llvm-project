@@ -270,13 +270,12 @@ void ASTStmtWriter::VisitInspectStmt(InspectStmt *S) {
 
   Record.AddSourceLocation(S->getInspectLoc());
 
-  for (PatternStmt* PS = S->getPatternList(); PS;
-    PS = PS->getNextPattern())
+  for (PatternStmt *PS = S->getPatternList(); PS; PS = PS->getNextPattern())
     Record.push_back(Writer.RecordInspectPatternID(PS));
   Code = serialization::STMT_INSPECT;
 }
 
-void ASTStmtWriter::VisitPatternStmt(PatternStmt* S) {
+void ASTStmtWriter::VisitPatternStmt(PatternStmt *S) {
   VisitStmt(S);
 
   bool HasPatternGuard = S->getPatternGuard() != nullptr;
@@ -2936,23 +2935,21 @@ void ASTWriter::ClearSwitchCaseIDs() {
   SwitchCaseIDs.clear();
 }
 
-unsigned ASTWriter::RecordInspectPatternID(PatternStmt* S) {
+unsigned ASTWriter::RecordInspectPatternID(PatternStmt *S) {
   assert(InspectPatternIDs.find(S) == InspectPatternIDs.end() &&
-    "PatternStmt recorded twice");
+         "PatternStmt recorded twice");
   unsigned NextID = InspectPatternIDs.size();
   InspectPatternIDs[S] = NextID;
   return NextID;
 }
 
-unsigned ASTWriter::getInspectPatternID(PatternStmt* S) {
+unsigned ASTWriter::getInspectPatternID(PatternStmt *S) {
   assert(InspectPatternIDs.find(S) != InspectPatternIDs.end() &&
-    "PatternStmt hasn't been seen yet");
+         "PatternStmt hasn't been seen yet");
   return InspectPatternIDs[S];
 }
 
-void ASTWriter::ClearInspectPatternIDs() {
-  InspectPatternIDs.clear();
-}
+void ASTWriter::ClearInspectPatternIDs() { InspectPatternIDs.clear(); }
 
 /// Write the given substatement or subexpression to the
 /// bitstream.

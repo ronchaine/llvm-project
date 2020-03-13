@@ -1098,11 +1098,11 @@ void TextNodeDumper::VisitWildcardPatternStmt(const WildcardPatternStmt *Node) {
     OS << " has_guard";
 }
 
-void TextNodeDumper::VisitIdentifierPatternStmt(const IdentifierPatternStmt *Node) {
-}
+void TextNodeDumper::VisitIdentifierPatternStmt(
+    const IdentifierPatternStmt *Node) {}
 
-void TextNodeDumper::VisitExpressionPatternStmt(const ExpressionPatternStmt *Node) {
-}
+void TextNodeDumper::VisitExpressionPatternStmt(
+    const ExpressionPatternStmt *Node) {}
 
 void TextNodeDumper::VisitWhileStmt(const WhileStmt *Node) {
   if (Node->hasVarStorage())

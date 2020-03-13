@@ -2404,7 +2404,7 @@ CFGBlock *CFGBuilder::Visit(Stmt * S, AddStmtChoice asc,
       return VisitSwitchStmt(cast<SwitchStmt>(S));
 
     case Stmt::InspectStmtClass:
-      return VisitInspectStmt(cast <InspectStmt>(S));
+      return VisitInspectStmt(cast<InspectStmt>(S));
 
     case Stmt::UnaryOperatorClass:
       return VisitUnaryOperator(cast<UnaryOperator>(S), asc);
@@ -4577,15 +4577,18 @@ CFGBlock *CFGBuilder::VisitInspectStmt(InspectStmt *Terminator) {
   return nullptr;
 }
 
-CFGBlock *CFGBuilder::VisitWildcardPatternStmt(WildcardPatternStmt *Terminator) {
+CFGBlock *
+CFGBuilder::VisitWildcardPatternStmt(WildcardPatternStmt *Terminator) {
   return nullptr;
 }
 
-CFGBlock *CFGBuilder::VisitIdentifierPatternStmt(IdentifierPatternStmt *Terminator) {
+CFGBlock *
+CFGBuilder::VisitIdentifierPatternStmt(IdentifierPatternStmt *Terminator) {
   return nullptr;
 }
 
-CFGBlock *CFGBuilder::VisitExpressionPatternStmt(ExpressionPatternStmt *Terminator) {
+CFGBlock *
+CFGBuilder::VisitExpressionPatternStmt(ExpressionPatternStmt *Terminator) {
   return nullptr;
 }
 

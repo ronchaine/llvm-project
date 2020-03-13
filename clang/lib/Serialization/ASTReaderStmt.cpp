@@ -288,9 +288,9 @@ void ASTStmtReader::VisitInspectStmt(InspectStmt *S) {
 
   S->setInspectLoc(readSourceLocation());
 
-  PatternStmt* PrevSC = nullptr;
-  for (auto E = Record.size(); Record.getIdx() != E; ) {
-    PatternStmt* SC = Record.getInspectPatternWithID(Record.readInt());
+  PatternStmt *PrevSC = nullptr;
+  for (auto E = Record.size(); Record.getIdx() != E;) {
+    PatternStmt *SC = Record.getInspectPatternWithID(Record.readInt());
     if (PrevSC)
       PrevSC->setNextPattern(SC);
     else
@@ -300,7 +300,7 @@ void ASTStmtReader::VisitInspectStmt(InspectStmt *S) {
   }
 }
 
-void ASTStmtReader::VisitPatternStmt(PatternStmt* S) {
+void ASTStmtReader::VisitPatternStmt(PatternStmt *S) {
   VisitStmt(S);
 
   bool HasPatternGuard = Record.readInt();
@@ -316,7 +316,7 @@ void ASTStmtReader::VisitPatternStmt(PatternStmt* S) {
 
 void ASTStmtReader::VisitWildcardPatternStmt(WildcardPatternStmt *S) {
   VisitPatternStmt(S);
-  S->setSubStmt(Record.readSubStmt());  
+  S->setSubStmt(Record.readSubStmt());
 }
 
 void ASTStmtReader::VisitIdentifierPatternStmt(IdentifierPatternStmt *S) {
@@ -3009,27 +3009,27 @@ Stmt *ASTReader::ReadStmtFromStream(ModuleFile &F) {
 
     case STMT_INSPECT:
       S = InspectStmt::CreateEmpty(
-        Context,
-        /* HasInit=*/Record[ASTStmtReader::NumStmtFields],
-        /* HasVar=*/Record[ASTStmtReader::NumStmtFields + 1]);
+          Context,
+          /* HasInit=*/Record[ASTStmtReader::NumStmtFields],
+          /* HasVar=*/Record[ASTStmtReader::NumStmtFields + 1]);
       break;
 
     case STMT_WILDCARDPATTERN:
       S = WildcardPatternStmt::CreateEmpty(
-        Context,
-        /* HasPatternGuard=*/Record[ASTStmtReader::NumStmtFields]);
+          Context,
+          /* HasPatternGuard=*/Record[ASTStmtReader::NumStmtFields]);
       break;
 
     case STMT_IDENTIFIERPATTERN:
       S = IdentifierPatternStmt::CreateEmpty(
-        Context,
-        /* HasPatternGuard=*/Record[ASTStmtReader::NumStmtFields]);
+          Context,
+          /* HasPatternGuard=*/Record[ASTStmtReader::NumStmtFields]);
       break;
 
     case STMT_EXPRESSIONPATTERN:
       S = ExpressionPatternStmt::CreateEmpty(
-        Context,
-        /* HasPatternGuard=*/Record[ASTStmtReader::NumStmtFields]);
+          Context,
+          /* HasPatternGuard=*/Record[ASTStmtReader::NumStmtFields]);
       break;
 
     case STMT_WHILE:

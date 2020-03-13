@@ -9418,21 +9418,20 @@ void ASTReader::ClearSwitchCaseIDs() {
 
 /// Record that the given ID maps to the given inspect pattern
 /// statement.
-void ASTReader::RecordInspectPatternID(PatternStmt* SC, unsigned ID) {
+void ASTReader::RecordInspectPatternID(PatternStmt *SC, unsigned ID) {
   assert((*CurrInspectPatternStmts)[ID] == nullptr &&
-    "Already have a PatternStmt with this ID");
+         "Already have a PatternStmt with this ID");
   (*CurrInspectPatternStmts)[ID] = SC;
 }
 
 /// Retrieve the switch-case statement with the given ID.
-PatternStmt* ASTReader::getInspectPatternWithID(unsigned ID) {
-  assert((*CurrInspectPatternStmts)[ID] != nullptr && "No PatternStmt with this ID");
+PatternStmt *ASTReader::getInspectPatternWithID(unsigned ID) {
+  assert((*CurrInspectPatternStmts)[ID] != nullptr &&
+         "No PatternStmt with this ID");
   return (*CurrInspectPatternStmts)[ID];
 }
 
-void ASTReader::ClearInspectPatternIDs() {
-  CurrInspectPatternStmts->clear();
-}
+void ASTReader::ClearInspectPatternIDs() { CurrInspectPatternStmts->clear(); }
 
 void ASTReader::ReadComments() {
   ASTContext &Context = getContext();
