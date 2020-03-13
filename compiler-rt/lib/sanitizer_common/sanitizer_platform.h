@@ -25,6 +25,12 @@
 # define SANITIZER_LINUX   0
 #endif
 
+#if defined(__GLIBC__)
+# define SANITIZER_GNU     1
+#else
+# define SANITIZER_GNU     0
+#endif
+
 #if defined(__FreeBSD__)
 # define SANITIZER_FREEBSD 1
 #else

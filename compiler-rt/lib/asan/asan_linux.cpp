@@ -45,7 +45,11 @@
 #include <link.h>
 #endif
 
-#if SANITIZER_ANDROID || SANITIZER_FREEBSD || SANITIZER_SOLARIS
+#if SANITIZER_LINUX && !SANITIZER_GNU
+#include <link.h>
+#endif
+
+#if !SANITIZER_GNU && !SANITIZER_NETBSD
 #include <ucontext.h>
 extern "C" void* _DYNAMIC;
 #elif SANITIZER_NETBSD
