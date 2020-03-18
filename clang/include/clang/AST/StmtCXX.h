@@ -1108,7 +1108,7 @@ public:
   ///
   /// In the following example, "x" is the condition variable.
   /// \code
-  /// switch (int x = foo()) {
+  /// inspect (int x = foo()) {
   ///   case 0: break;
   ///   // ...
   /// }
