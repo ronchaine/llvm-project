@@ -1645,8 +1645,8 @@ private:
   /// statement range in current switch instruction.
   llvm::BasicBlock *CaseRangeBlock = nullptr;
 
-  /// InspectInsn - This is nearest current inspect context when emitting
-  /// C++ inspect statements. It's null if current context is not in a inspect.
+  /// InspectContext - Keep track of inspect information. This helps pattern
+  /// codegen and handling nested inspect patterns.
   struct InspectContext {
     llvm::BasicBlock *NextPattern = nullptr;
     llvm::BasicBlock *InspectExit = nullptr;
