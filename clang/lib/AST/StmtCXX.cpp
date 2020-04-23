@@ -216,7 +216,7 @@ IdentifierPatternStmt *IdentifierPatternStmt::Create(const ASTContext &Ctx,
   bool HasPatternGuard = PatternGuard != nullptr;
 
   void *Mem = Ctx.Allocate(
-      totalSizeToAlloc<Stmt *, Expr *>(NumMandatoryStmtPtr, HasPatternGuard),
+      totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr + HasPatternGuard),
       alignof(IdentifierPatternStmt));
   return new (Mem)
       IdentifierPatternStmt(CaseLoc, ColonLoc, nullptr, nullptr, PatternGuard);
@@ -226,7 +226,7 @@ IdentifierPatternStmt *
 IdentifierPatternStmt::CreateEmpty(const ASTContext &Ctx,
                                    bool HasPatternGuard) {
   void *Mem = Ctx.Allocate(
-      totalSizeToAlloc<Stmt *, Expr *>(NumMandatoryStmtPtr, HasPatternGuard),
+      totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr + HasPatternGuard),
       alignof(IdentifierPatternStmt));
   return new (Mem) IdentifierPatternStmt(EmptyShell(), HasPatternGuard);
 }

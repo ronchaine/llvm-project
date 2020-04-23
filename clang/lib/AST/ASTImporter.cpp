@@ -6985,14 +6985,14 @@ ASTNodeImporter::VisitIdentifierPatternStmt(IdentifierPatternStmt *S) {
   auto ToSubStmt = importChecked(Err, S->getSubStmt());
   auto ToPatternLoc = importChecked(Err, S->getPatternLoc());
   auto ToColonLoc = importChecked(Err, S->getColonLoc());
-  auto ToCond = importChecked(Err, S->getCond());
+  auto ToVar = importChecked(Err, S->getVar());
   auto ToPatternGuard = importChecked(Err, S->getPatternGuard());
   if (Err)
     return std::move(Err);
 
   auto *ToStmt = IdentifierPatternStmt::Create(
       Importer.getToContext(), ToPatternLoc, ToColonLoc, ToPatternGuard);
-  ToStmt->setCond(ToCond);
+  ToStmt->setVar(ToVar);
   ToStmt->setSubStmt(ToSubStmt);
 
   return ToStmt;

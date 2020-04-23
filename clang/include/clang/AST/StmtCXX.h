@@ -690,45 +690,42 @@ public:
 
 class IdentifierPatternStmt final
     : public PatternStmt,
-      private llvm::TrailingObjects<IdentifierPatternStmt, Stmt *, Expr *> {
+      private llvm::TrailingObjects<IdentifierPatternStmt, Stmt *> {
   friend TrailingObjects;
 
   // IdentifierPatternStmt is followed by several trailing objects.
   //
-  // * A "Expr *" for the condition of the pattern statement. Always present.
-  //
   // * A "Stmt *" for the substatement of the pattern statement. Always present.
   //
-  // * An "Expr *" for the pattern guard. Optional.
+  // * A "Stmt *" for the identifier of the pattern statement. Always present.
+  //   This is in fact a "Expr *".
   //
-  enum { CondOffset = 0, PatternGuardOffset = 0, SubStmtOffsetFromCond = 1 };
+  // * A "Stmt *" for the condition.
+  //    Present if and only if hasPatternGuard(). This is in fact a "Expr *".
+  //
+  enum { SubStmtOffset = 0, VarOffset = 1 };
   enum { NumMandatoryStmtPtr = 2 };
 
-  unsigned condOffset() const { return CondOffset; }
+  unsigned varOffset() const { return VarOffset; }
   unsigned subStmtOffset() const {
-    return condOffset() + SubStmtOffsetFromCond;
+    return SubStmtOffset;
   }
-  unsigned patternGuardOffset() const { return PatternGuardOffset; }
+  unsigned patternGuardOffset() const { return varOffset() + hasPatternGuard(); }
 
   unsigned numTrailingObjects(OverloadToken<Stmt *>) const {
     return NumMandatoryStmtPtr;
   }
 
-  unsigned numTrailingObjects(OverloadToken<Expr *>) const {
-    return hasPatternGuard();
-  }
-
 public:
   IdentifierPatternStmt(SourceLocation PatternLoc, SourceLocation ColonLoc,
-                        Expr *Cond, Stmt *SubStmt, Expr *patternGuard)
+                        VarDecl *VD, Stmt *SubStmt, Expr *Guard)
       : PatternStmt(IdentifierPatternStmtClass, PatternLoc, ColonLoc) {
     setSubStmt(SubStmt);
-    setCond(Cond);
+    setVar(VD);
 
-    bool HasPatternGuard = patternGuard != nullptr;
-    InspectPatternBits.PatternStmtHasPatternGuard = HasPatternGuard;
-    if (HasPatternGuard) {
-      setPatternGuard(patternGuard);
+    if (Guard) {
+      InspectPatternBits.PatternStmtHasPatternGuard = true;
+      setPatternGuard(Guard);
     }
   }
 
@@ -751,16 +748,19 @@ public:
   SourceLocation getIdentifierLoc() const { return getPatternLoc(); }
   void setIdentifierLoc(SourceLocation L) { setPatternLoc(L); }
 
-  Expr *getCond() {
-    return reinterpret_cast<Expr *>(getTrailingObjects<Stmt *>()[condOffset()]);
+  VarDecl *getVar() {
+    return reinterpret_cast<VarDecl *>(
+        getTrailingObjects<Stmt *>()[varOffset()]);
   }
 
-  const Expr *getCond() const {
-    return reinterpret_cast<Expr *>(getTrailingObjects<Stmt *>()[condOffset()]);
+  const VarDecl *getVar() const {
+    return reinterpret_cast<VarDecl *>(
+        getTrailingObjects<Stmt *>()[varOffset()]);
   }
 
-  void setCond(Expr *Val) {
-    getTrailingObjects<Stmt *>()[condOffset()] = reinterpret_cast<Stmt *>(Val);
+  void setVar(VarDecl *VD) {
+    getTrailingObjects<Stmt *>()[varOffset()] =
+        reinterpret_cast<Stmt *>(VD);
   }
 
   Stmt *getSubStmt() { return getTrailingObjects<Stmt *>()[subStmtOffset()]; }
@@ -773,15 +773,20 @@ public:
   }
 
   Expr *getPatternGuard() {
-    return getTrailingObjects<Expr *>()[patternGuardOffset()];
+    assert(hasPatternGuard() && "This pattern has no guard to get!");
+    return reinterpret_cast<Expr *>(
+        getTrailingObjects<Stmt *>()[patternGuardOffset()]);
   }
 
   const Expr *getPatternGuard() const {
-    return getTrailingObjects<Expr *>()[patternGuardOffset()];
+    assert(hasPatternGuard() && "This pattern has no guard to get!");
+    return reinterpret_cast<Expr *>(
+        getTrailingObjects<Stmt *>()[patternGuardOffset()]);
   }
 
-  void setPatternGuard(Expr *S) {
-    getTrailingObjects<Expr *>()[patternGuardOffset()] = S;
+  void setPatternGuard(Expr *Guard) {
+    getTrailingObjects<Stmt *>()[patternGuardOffset()] =
+        reinterpret_cast<Stmt *>(Guard);
   }
 
   bool hasPatternGuard() const {
@@ -792,6 +797,7 @@ public:
   SourceLocation getEndLoc() const LLVM_READONLY {
     // Handle deeply nested identifier pattern statements with iteration instead
     // of recursion.
+    // FIXME: Is this the right approach? There are no tests for this.
     const PatternStmt *CS = this;
     while (const auto *CS2 = dyn_cast<PatternStmt>(CS->getSubStmt()))
       CS = CS2;

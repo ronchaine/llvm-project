@@ -159,6 +159,9 @@ public:
 
     /// This is the scope of a C++ P2688 / pattern matching 'match' statement.
     InspectScope = 0x20000000,
+
+    /// This is the scope of a C++ pattern statement.
+    PatternScope = 0x40000000
   };
 
 private:
@@ -502,6 +505,21 @@ public:
                (Scope::FnScope | Scope::ClassScope | Scope::BlockScope |
                 Scope::TemplateParamScope | Scope::FunctionPrototypeScope |
                 Scope::AtCatchScope | Scope::ObjCMethodScope))
+        return false;
+    }
+    return false;
+  }
+
+  /// isPatternScope - Return true if this scope is an pattern scope.
+  bool isPatternScope() const {
+    for (const Scope *S = this; S; S = S->getParent()) {
+      if (S->getFlags() & Scope::PatternScope)
+        return true;
+      else if (S->getFlags() &
+               (Scope::FnScope | Scope::ClassScope | Scope::BlockScope |
+                Scope::TemplateParamScope | Scope::FunctionPrototypeScope |
+                Scope::AtCatchScope | Scope::ObjCMethodScope |
+                Scope::InspectScope))
         return false;
     }
     return false;

@@ -179,7 +179,7 @@ StmtResult Parser::ParseStatementOrDeclarationAfterAttributes(
   StmtResult Res;
   SourceLocation GNUAttributeLoc;
 
-  auto IsWildcardPatternIdentifier = [](IdentifierInfo* II, Scope *S) {
+  auto IsWildcardPattern = [](IdentifierInfo *II, Scope *S) {
     if (!II || !S)
       return false;
 
@@ -219,9 +219,14 @@ Retry:
   case tok::identifier:
   ParseIdentifier: {
     // C++ P2688 / pattern matching: wildcard inspect pattern.
-    if (getLangOpts().PatternMatching &&
-        IsWildcardPatternIdentifier(Tok.getIdentifierInfo(), getCurScope()))
-      return ParseWildcardPattern(StmtCtx);
+    if (getLangOpts().PatternMatching) {
+      auto *II = Tok.getIdentifierInfo();
+      auto *S = getCurScope();
+      if (IsWildcardPattern(II, getCurScope()))
+        return ParseWildcardPattern(StmtCtx);
+      if (II && S && S->isInspectScope() && !S->isPatternScope())
+        return ParseIdentifierPattern(StmtCtx);
+    }
 
     Token Next = NextToken();
     if (Next.is(tok::colon)) { // C99 6.8.1: labeled-statement
@@ -878,9 +883,38 @@ StmtResult Parser::ParsePatternStatement(InspectStmt *Inspect,
   return StmtError();
 }
 
-/// ParsePatternStatement - We have an pattern and a ':' after it.
+/// ParsePatternGuard - a 'if' followed by a condition, no body. 
 ///
-///       pattern-statement:
+///       pattern-guard:
+///         'if' (expression)
+///
+bool Parser::ParsePatternGuard(Sema::ConditionResult &Cond,
+                               SourceLocation &IfLoc,
+                               bool IsConstexprIf) {
+  assert(Tok.is(tok::kw_if) && "expected 'if'");
+
+  IfLoc = ConsumeToken(); // eat the 'if'.
+  if (Tok.isNot(tok::l_paren)) {
+    Diag(Tok, diag::err_expected_lparen_after) << "if";
+    SkipUntil(tok::semi);
+    return false;
+  }
+
+  // Parse the condition.
+  StmtResult InitStmt; // FIXME: not allowed in pattern matching
+  if (ParseParenExprOrCondition(&InitStmt, Cond, IfLoc,
+                                IsConstexprIf ? Sema::ConditionKind::ConstexprIf
+                                            : Sema::ConditionKind::Boolean))
+    return false;
+
+  return true;
+}
+
+/// ParseWildcardPattern - We have a '__' wildcard that matches any
+/// value from the inspect condition. The statement comes after the
+/// ':'.
+///
+///       wildcard-pattern:
 ///         '__' pattern-guard[opt] ':' statement
 ///
 StmtResult Parser::ParseWildcardPattern(ParsedStmtContext StmtCtx) {
@@ -890,25 +924,16 @@ StmtResult Parser::ParseWildcardPattern(ParsedStmtContext StmtCtx) {
          "Wildcard pattern should be in inspect scope");
   SourceLocation WildcardLoc = ConsumeToken();
 
-  // Check for pattern-guard[opt]
-  // FIXME: move this to its own method.
-  bool IsConstexpr = false; // FIXME: check whether inspect has IsConst
+  // Handle pattern-guard[opt]
   Sema::ConditionResult Cond;
   SourceLocation IfLoc;
-  if (Tok.is(tok::kw_if)) {
-    IfLoc = ConsumeToken(); // eat the 'if'.
-    if (Tok.isNot(tok::l_paren)) {
-      Diag(Tok, diag::err_expected_lparen_after) << "if";
-      SkipUntil(tok::semi);
+
+  ParseScope PatternScope(this, Scope::PatternScope);
+
+  // FIXME: retrieve constexpr information from InspectStmt
+  if (Tok.is(tok::kw_if))
+    if (!ParsePatternGuard(Cond, IfLoc, false/*IsConstexprIf*/))
       return StmtError();
-    }
-    // Parse the condition.
-    StmtResult InitStmt; // FIXME: not allowed in pattern matching
-    if (ParseParenExprOrCondition(&InitStmt, Cond, IfLoc,
-                                  IsConstexpr ? Sema::ConditionKind::ConstexprIf
-                                              : Sema::ConditionKind::Boolean))
-      return StmtError();
-  }
 
   if (!Tok.is(tok::colon)) {
     Diag(Tok, diag::err_expected_colon_after)
@@ -929,35 +954,52 @@ StmtResult Parser::ParseWildcardPattern(ParsedStmtContext StmtCtx) {
   if (SubStmt.isInvalid())
     SubStmt = Actions.ActOnNullStmt(ColonLoc);
 
+  PatternScope.Exit();
+
   return Actions.ActOnWildcardPattern(WildcardLoc, ColonLoc, SubStmt.get(),
                                       Cond.get().second);
 }
 
-StmtResult Parser::ParseIdentifierPattern(InspectStmt *Inspect, ParsedStmtContext StmtCtx) {
+/// ParseIdentifierPattern - We have an identifier that matches any value
+/// and binds back to the inspect condition. It can optionally contain a
+/// pattern guard. The statement comes after the ':'.
+///
+///       identifier-pattern:
+///         identifier pattern-guard[opt] ':' statement
+///
+StmtResult Parser::ParseIdentifierPattern(ParsedStmtContext StmtCtx) {
   assert((Tok.is(tok::identifier)) && "Not an identifier pattern!");
+  assert(getCurScope()->isInspectScope() &&
+         "Identifier pattern should be in inspect scope");
+  // Get the identifier
+  //   identifier pattern-guard[opt] ':' statement
+  //   ^
+  IdentifierInfo *II = Tok.getIdentifierInfo();
+  SourceLocation IdentifierLoc = ConsumeToken();
 
-  // identifier ':' statement
-  // ^
-  SourceLocation IdentifierLocation = Tok.getLocation();
-  ExprResult Identifier = ParseExpression();
+  // Handle pattern-guard[opt]
+  Sema::ConditionResult Cond;
+  SourceLocation IfLoc;
 
-  ExprResult Condition = Actions.ActOnBinOp(getCurScope(), IdentifierLocation,
-    tok::TokenKind::equalequal, Identifier.get(), Inspect->getCond());
+  ParseScope PatternScope(this, Scope::PatternScope | Scope::DeclScope, true);
 
-  // there may be a pattern guard here
-  ExprResult PatternGuard;
-  if (Tok.is(tok::kw_if)) {
-    ConsumeToken();
-    PatternGuard = ParseExpression();
+  // FIXME: retrieve constexpr information from InspectStmt
+  if (Tok.is(tok::kw_if))
+    if (!ParsePatternGuard(Cond, IfLoc, false/*IsConstexprIf*/))
+      return StmtError();
+
+  if (!Tok.is(tok::colon)) {
+    Diag(Tok, diag::err_expected_colon_after)
+        << (IfLoc.isInvalid() ? IdentifierLoc : IfLoc);
+    SkipUntil(tok::semi);
+    return StmtError();
   }
-
-  // identifier ':' statement
-  //            ^
-  assert(Tok.is(tok::colon) && "Not an identifier pattern!");
   SourceLocation ColonLoc = ConsumeToken();
 
-  // identifier ':' statement
-  //                ^
+  // Parse the statement
+  //
+  //   identifier pattern-guard[opt] ':' statement
+  //                                     ^
   StmtResult SubStmt = ParseStatement(nullptr, StmtCtx);
 
   // Broken substmt shouldn't prevent the identifier from being added to the
@@ -965,8 +1007,9 @@ StmtResult Parser::ParseIdentifierPattern(InspectStmt *Inspect, ParsedStmtContex
   if (SubStmt.isInvalid())
     SubStmt = Actions.ActOnNullStmt(ColonLoc);
 
-  return Actions.ActOnIdentifierPattern(IdentifierLocation, ColonLoc, Condition.get(), 
-                                        SubStmt.get(), PatternGuard.get());
+  return Actions.ActOnIdentifierPattern(IdentifierLoc, ColonLoc,
+                                        II, SubStmt.get(),
+                                        Cond.get().second);
 }
 
 StmtResult Parser::ParseExpressionPattern(InspectStmt *Inspect, ParsedStmtContext StmtCtx, Expr* ConstantExpr) {
@@ -2045,10 +2088,8 @@ StmtResult Parser::ParseInspectStatement(ParsedAttributesWithRange &attrs,
                                 Sema::ConditionKind::Inspect))
     return StmtError();
 
-  // inspect (...) { }
-  //               ^
-  StmtResult Inspect = Actions.ActOnStartOfInspectStmt(InspectLoc, Init.get(),
-                                                       Cond);
+  StmtResult Inspect =
+      Actions.ActOnStartOfInspectStmt(InspectLoc, Init.get(), Cond);
   if (Inspect.isInvalid()) {
     // Skip the inspect body.
     if (Tok.is(tok::l_brace)) {
@@ -2064,6 +2105,9 @@ StmtResult Parser::ParseInspectStatement(ParsedAttributesWithRange &attrs,
   ParseScope InnerScope(this, Scope::DeclScope, true, Tok.is(tok::l_brace));
 
   // Read the body statement.
+  //
+  // inspect (...) { ... }
+  //               ^
   StmtResult Body(ParseStatement(TrailingElseLoc));
 
   // Pop the scopes.

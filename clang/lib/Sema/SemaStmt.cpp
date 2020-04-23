@@ -41,6 +41,7 @@
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringExtras.h"
+#include "TypeLocBuilder.h"
 
 using namespace clang;
 using namespace sema;
@@ -579,19 +580,67 @@ StmtResult Sema::ActOnWildcardPattern(SourceLocation WildcardLoc,
   return WPS;
 }
 
-StmtResult Sema::ActOnIdentifierPattern(SourceLocation ConditionLoc,
+StmtResult Sema::ActOnIdentifierPattern(SourceLocation IdentifierLoc,
                                         SourceLocation ColonLoc,
-                                        Expr *Condition, Stmt *SubStmt,
+                                        IdentifierInfo *II, Stmt *SubStmt,
                                         Expr *PatternGuard) {
-  if (getCurFunction()->InspectStack.empty()) {
+  if (getCurFunction()->InspectStack.empty())
     return StmtError();
-  }
+  InspectStmt *Inspect = getCurFunction()->InspectStack.back().getPointer();
 
-  auto *IPS = IdentifierPatternStmt::Create(Context, ConditionLoc, ColonLoc,
+  // Bind the identifier under II to the lvalue condition. Consider
+  //
+  // int v = /* ... */;
+  //  inspect (v) {
+  //    x: std::cout << x;
+  //    ^~~~ identifier 
+  //  }
+  // 
+  // Semantically equivalent to:
+  //
+  //  inspect (v) {
+  //    __ : {
+  //      auto &x = v;
+  //      std::cout << x;
+  //    }
+  //  }
+  //
+  // Create a 'auto&' TypeSourceInfo that we can use to deduce against.
+  QualType DeductType = Context.getAutoDeductType();
+  TypeLocBuilder TLB;
+  AutoTypeLoc TL = TLB.push<AutoTypeLoc>(DeductType);
+  TL.setNameLoc(IdentifierLoc);
+  DeductType = BuildReferenceType(DeductType, true, IdentifierLoc, II);
+  assert(!DeductType.isNull() && "can't build reference to auto");
+  TLB.push<ReferenceTypeLoc>(DeductType).setSigilLoc(IdentifierLoc);
+  TypeSourceInfo *TSI = TLB.getTypeSourceInfo(Context, DeductType);
+
+  // Deduce the type of the inspect condition.
+  QualType DeducedType = deduceVarTypeFromInitializer(
+      /*VarDecl*/nullptr, DeclarationName(II), DeductType, TSI,
+      SourceRange(IdentifierLoc, IdentifierLoc), /*IsDirectInit*/false,
+      Inspect->getCond());
+  if (DeducedType.isNull())
+    return StmtError();
+
+  // Create a variable that exists as a way to name and refer to the
+  VarDecl *NewVD = VarDecl::Create(Context, CurContext, IdentifierLoc,
+                                   IdentifierLoc, II, DeducedType, TSI,
+                                   SC_Auto);
+  if (!NewVD)
+    return StmtError();                                 
+  NewVD->setReferenced(true);
+  NewVD->setInitStyle(VarDecl::InitializationStyle::CInit);
+  NewVD->markUsed(Context);
+  NewVD->setInit(Inspect->getCond());
+  PushOnScopeChains(NewVD, CurScope, /*AddToContext*/true);
+
+  auto *IPS = IdentifierPatternStmt::Create(Context, IdentifierLoc, ColonLoc,
                                             PatternGuard);
-  IPS->setCond(Condition);
+  IPS->setVar(NewVD);
   IPS->setSubStmt(SubStmt);
-  getCurFunction()->InspectStack.back().getPointer()->addPattern(IPS);
+  Inspect->addPattern(IPS);
+
   return IPS;
 }
 

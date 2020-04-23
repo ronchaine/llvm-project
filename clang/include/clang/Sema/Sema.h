@@ -8808,7 +8808,7 @@ public:
                                   SourceLocation ColonLoc, Stmt *SubStmt
                                   Expr *PatternGuard);
   StmtResult ActOnIdentifierPattern(SourceLocation IdentifierLoc,
-                                    SourceLocation ColonLoc, Expr *Condition,
+                                    SourceLocation ColonLoc, IdentifierInfo *II,
                                     Stmt *SubStmt, Expr *PatternGuard);
   StmtResult ActOnExpressionPattern(SourceLocation ExpressionLoc,
                                     SourceLocation ColonLoc, Expr *Condition,
