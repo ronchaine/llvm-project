@@ -707,10 +707,10 @@ class IdentifierPatternStmt final
   enum { NumMandatoryStmtPtr = 2 };
 
   unsigned varOffset() const { return VarOffset; }
-  unsigned subStmtOffset() const {
-    return SubStmtOffset;
+  unsigned subStmtOffset() const { return SubStmtOffset; }
+  unsigned patternGuardOffset() const {
+    return varOffset() + hasPatternGuard();
   }
-  unsigned patternGuardOffset() const { return varOffset() + hasPatternGuard(); }
 
   unsigned numTrailingObjects(OverloadToken<Stmt *>) const {
     return NumMandatoryStmtPtr;
@@ -759,8 +759,7 @@ public:
   }
 
   void setVar(VarDecl *VD) {
-    getTrailingObjects<Stmt *>()[varOffset()] =
-        reinterpret_cast<Stmt *>(VD);
+    getTrailingObjects<Stmt *>()[varOffset()] = reinterpret_cast<Stmt *>(VD);
   }
 
   Stmt *getSubStmt() { return getTrailingObjects<Stmt *>()[subStmtOffset()]; }

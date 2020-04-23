@@ -883,14 +883,13 @@ StmtResult Parser::ParsePatternStatement(InspectStmt *Inspect,
   return StmtError();
 }
 
-/// ParsePatternGuard - a 'if' followed by a condition, no body. 
+/// ParsePatternGuard - a 'if' followed by a condition, no body.
 ///
 ///       pattern-guard:
 ///         'if' (expression)
 ///
 bool Parser::ParsePatternGuard(Sema::ConditionResult &Cond,
-                               SourceLocation &IfLoc,
-                               bool IsConstexprIf) {
+                               SourceLocation &IfLoc, bool IsConstexprIf) {
   assert(Tok.is(tok::kw_if) && "expected 'if'");
 
   IfLoc = ConsumeToken(); // eat the 'if'.
@@ -904,7 +903,7 @@ bool Parser::ParsePatternGuard(Sema::ConditionResult &Cond,
   StmtResult InitStmt; // FIXME: not allowed in pattern matching
   if (ParseParenExprOrCondition(&InitStmt, Cond, IfLoc,
                                 IsConstexprIf ? Sema::ConditionKind::ConstexprIf
-                                            : Sema::ConditionKind::Boolean))
+                                              : Sema::ConditionKind::Boolean))
     return false;
 
   return true;
@@ -932,7 +931,7 @@ StmtResult Parser::ParseWildcardPattern(ParsedStmtContext StmtCtx) {
 
   // FIXME: retrieve constexpr information from InspectStmt
   if (Tok.is(tok::kw_if))
-    if (!ParsePatternGuard(Cond, IfLoc, false/*IsConstexprIf*/))
+    if (!ParsePatternGuard(Cond, IfLoc, false /*IsConstexprIf*/))
       return StmtError();
 
   if (!Tok.is(tok::colon)) {
@@ -985,7 +984,7 @@ StmtResult Parser::ParseIdentifierPattern(ParsedStmtContext StmtCtx) {
 
   // FIXME: retrieve constexpr information from InspectStmt
   if (Tok.is(tok::kw_if))
-    if (!ParsePatternGuard(Cond, IfLoc, false/*IsConstexprIf*/))
+    if (!ParsePatternGuard(Cond, IfLoc, false /*IsConstexprIf*/))
       return StmtError();
 
   if (!Tok.is(tok::colon)) {
@@ -1007,9 +1006,8 @@ StmtResult Parser::ParseIdentifierPattern(ParsedStmtContext StmtCtx) {
   if (SubStmt.isInvalid())
     SubStmt = Actions.ActOnNullStmt(ColonLoc);
 
-  return Actions.ActOnIdentifierPattern(IdentifierLoc, ColonLoc,
-                                        II, SubStmt.get(),
-                                        Cond.get().second);
+  return Actions.ActOnIdentifierPattern(IdentifierLoc, ColonLoc, II,
+                                        SubStmt.get(), Cond.get().second);
 }
 
 StmtResult Parser::ParseExpressionPattern(InspectStmt *Inspect, ParsedStmtContext StmtCtx, Expr* ConstantExpr) {

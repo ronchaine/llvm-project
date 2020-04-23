@@ -2129,8 +2129,7 @@ private:
   StmtResult ParsePatternStatement(InspectStmt *Inspect,
                                    ParsedAttributesWithRange &attrs,
                                    ParsedStmtContext StmtCtx);
-  bool ParsePatternGuard(Sema::ConditionResult &Cond,
-                         SourceLocation &IfLoc,
+  bool ParsePatternGuard(Sema::ConditionResult &Cond, SourceLocation &IfLoc,
                          bool IsConstexprIf);
   StmtResult ParseWildcardPattern(ParsedStmtContext StmtCtx);
   StmtResult ParseIdentifierPattern(ParsedStmtContext StmtCtx);

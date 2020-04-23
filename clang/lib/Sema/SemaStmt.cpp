@@ -593,9 +593,9 @@ StmtResult Sema::ActOnIdentifierPattern(SourceLocation IdentifierLoc,
   // int v = /* ... */;
   //  inspect (v) {
   //    x: std::cout << x;
-  //    ^~~~ identifier 
+  //    ^~~~ identifier
   //  }
-  // 
+  //
   // Semantically equivalent to:
   //
   //  inspect (v) {
@@ -617,23 +617,23 @@ StmtResult Sema::ActOnIdentifierPattern(SourceLocation IdentifierLoc,
 
   // Deduce the type of the inspect condition.
   QualType DeducedType = deduceVarTypeFromInitializer(
-      /*VarDecl*/nullptr, DeclarationName(II), DeductType, TSI,
-      SourceRange(IdentifierLoc, IdentifierLoc), /*IsDirectInit*/false,
+      /*VarDecl*/ nullptr, DeclarationName(II), DeductType, TSI,
+      SourceRange(IdentifierLoc, IdentifierLoc), /*IsDirectInit*/ false,
       Inspect->getCond());
   if (DeducedType.isNull())
     return StmtError();
 
   // Create a variable that exists as a way to name and refer to the
-  VarDecl *NewVD = VarDecl::Create(Context, CurContext, IdentifierLoc,
-                                   IdentifierLoc, II, DeducedType, TSI,
-                                   SC_Auto);
+  VarDecl *NewVD =
+      VarDecl::Create(Context, CurContext, IdentifierLoc, IdentifierLoc, II,
+                      DeducedType, TSI, SC_Auto);
   if (!NewVD)
-    return StmtError();                                 
+    return StmtError();
   NewVD->setReferenced(true);
   NewVD->setInitStyle(VarDecl::InitializationStyle::CInit);
   NewVD->markUsed(Context);
   NewVD->setInit(Inspect->getCond());
-  PushOnScopeChains(NewVD, CurScope, /*AddToContext*/true);
+  PushOnScopeChains(NewVD, CurScope, /*AddToContext*/ true);
 
   auto *IPS = IdentifierPatternStmt::Create(Context, IdentifierLoc, ColonLoc,
                                             PatternGuard);
