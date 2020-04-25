@@ -1019,6 +1019,9 @@ class InspectStmt final : public Stmt,
   /// Points to a linked list of patterns
   PatternStmt *FirstPattern;
 
+  // true if this is a constexpr inspect
+  bool ConstexprInspect;
+
   // InspectStmt is followed by several trailing objects,
   // some of which optional. Note that it would be more convenient to
   // put the optional trailing objects at the end but this would change
@@ -1051,7 +1054,8 @@ class InspectStmt final : public Stmt,
   unsigned bodyOffset() const { return condOffset() + BodyOffsetFromCond; }
 
   /// Build an inspect statement.
-  InspectStmt(const ASTContext &Ctx, Stmt *Init, VarDecl *Var, Expr *Cond);
+  InspectStmt(const ASTContext &Ctx, Stmt *Init, VarDecl *Var, Expr *Cond,
+              bool IsConstexpr);
 
   /// Build an empty inspect statement.
   explicit InspectStmt(EmptyShell Empty, bool HasInit, bool HasVar);
@@ -1059,7 +1063,7 @@ class InspectStmt final : public Stmt,
 public:
   /// Create an inspect statement.
   static InspectStmt *Create(const ASTContext &Ctx, Stmt *Init, VarDecl *Var,
-                             Expr *Cond);
+                             Expr *Cond, bool IsConstexpr);
 
   /// Create an empty inspect statement optionally with storage for
   /// an init expression and a condition variable.
@@ -1175,6 +1179,8 @@ public:
     return getBody() ? getBody()->getEndLoc()
                      : reinterpret_cast<const Stmt *>(getCond())->getEndLoc();
   }
+
+  bool isConstexpr() const { return ConstexprInspect; }
 
   // Iterators
   child_range children() {

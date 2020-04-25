@@ -2062,17 +2062,25 @@ StmtResult Parser::ParseSwitchStatement(SourceLocation *TrailingElseLoc) {
 
 /// ParseInspectStatement
 ///       inspect-statement:
-/// [C++]   'inspect' '(' condition ')' statement
+/// [C++]   'inspect' ['constexpr'] '(' condition ')' statement
 StmtResult Parser::ParseInspectStatement(ParsedAttributesWithRange &attrs,
                                          ParsedStmtContext StmtCtx, 
                                          SourceLocation *TrailingElseLoc) {
   assert(Tok.is(tok::kw_inspect) && "Not an inspect stmt!");
   SourceLocation InspectLoc = ConsumeToken();  // eat the 'inspect'.
 
+  // Check for constexpr
+  bool IsConstexpr = false;
+  if (Tok.is(tok::kw_constexpr)) {
+    IsConstexpr = true;
+    ConsumeToken();
+  }
+
   // inspect (...) { }
   //         ^
   if (Tok.isNot(tok::l_paren)) {
-    Diag(Tok, diag::err_expected_lparen_after) << "inspect";
+    Diag(Tok, diag::err_expected_lparen_after)
+        << (IsConstexpr ? "constexpr" : "inspect");
     SkipUntil(tok::semi);
     return StmtError();
   }
@@ -2086,8 +2094,8 @@ StmtResult Parser::ParseInspectStatement(ParsedAttributesWithRange &attrs,
                                 Sema::ConditionKind::Inspect))
     return StmtError();
 
-  StmtResult Inspect =
-      Actions.ActOnStartOfInspectStmt(InspectLoc, Init.get(), Cond);
+  StmtResult Inspect = Actions.ActOnStartOfInspectStmt(InspectLoc, Init.get(),
+                                                       Cond, IsConstexpr);
   if (Inspect.isInvalid()) {
     // Skip the inspect body.
     if (Tok.is(tok::l_brace)) {

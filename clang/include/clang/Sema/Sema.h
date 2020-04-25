@@ -8814,7 +8814,7 @@ public:
                                     SourceLocation ColonLoc, Expr *Condition,
                                     Stmt *SubStmt, Expr *PatternGuard);
   StmtResult ActOnStartOfInspectStmt(SourceLocation InspectLoc, Stmt *InitStmt,
-                                     ConditionResult Cond);
+                                     ConditionResult Cond, bool IsConstexpr);
   StmtResult ActOnFinishInspectStmt(SourceLocation InspectLoc, Stmt *Inspect,
                                     Stmt *Body);
 
