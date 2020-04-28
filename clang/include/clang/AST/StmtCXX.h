@@ -1020,7 +1020,10 @@ class InspectStmt final : public Stmt,
   PatternStmt *FirstPattern;
 
   // True if this is a constexpr inspect
-  bool ConstexprInspect;
+  unsigned ConstexprInspect : 1;
+
+  /// Whether this inspect had the result type explicitly specified.
+  unsigned ExplicitResultType : 1;
 
   // InspectStmt is followed by several trailing objects,
   // some of which optional. Note that it would be more convenient to
@@ -1055,7 +1058,7 @@ class InspectStmt final : public Stmt,
 
   /// Build an inspect statement.
   InspectStmt(const ASTContext &Ctx, Stmt *Init, VarDecl *Var, Expr *Cond,
-              bool IsConstexpr);
+              bool IsConstexpr, bool ExplicitResultType);
 
   /// Build an empty inspect statement.
   explicit InspectStmt(EmptyShell Empty, bool HasInit, bool HasVar);
@@ -1063,7 +1066,8 @@ class InspectStmt final : public Stmt,
 public:
   /// Create an inspect statement.
   static InspectStmt *Create(const ASTContext &Ctx, Stmt *Init, VarDecl *Var,
-                             Expr *Cond, bool IsConstexpr);
+                             Expr *Cond, bool IsConstexpr,
+                             bool ExplicitResultType);
 
   /// Create an empty inspect statement optionally with storage for
   /// an init expression and a condition variable.
@@ -1181,6 +1185,9 @@ public:
   }
 
   bool isConstexpr() const { return ConstexprInspect; }
+
+  /// Whether this inspect had its result type explicitly specified.
+  bool hasExplicitResultType() const { return ExplicitResultType; }
 
   // Iterators
   child_range children() {
