@@ -229,6 +229,8 @@ void Scope::dumpImpl(raw_ostream &OS) const {
       {ClassInheritanceScope, "ClassInheritanceScope"},
       {CatchScope, "CatchScope"},
       {OpenACCComputeConstructScope, "OpenACCComputeConstructScope"},
+      {InspectScope, "InspectScope"},
+      {PatternScope, "PatternScope"}
   };
 
   for (auto Info : FlagInfo) {

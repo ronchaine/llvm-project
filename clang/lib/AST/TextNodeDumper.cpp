@@ -1106,7 +1106,10 @@ void TextNodeDumper::VisitWildcardPatternStmt(const WildcardPatternStmt *Node) {
 }
 
 void TextNodeDumper::VisitIdentifierPatternStmt(
-    const IdentifierPatternStmt *Node) {}
+    const IdentifierPatternStmt *Node) {
+  if (Node->hasPatternGuard())
+    OS << " has_guard";
+}
 
 void TextNodeDumper::VisitExpressionPatternStmt(
     const ExpressionPatternStmt *Node) {}

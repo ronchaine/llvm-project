@@ -718,7 +718,7 @@ class IdentifierPatternStmt final
 
 public:
   IdentifierPatternStmt(SourceLocation PatternLoc, SourceLocation ColonLoc,
-                        VarDecl *VD, Stmt *SubStmt, Expr *Guard)
+                        Stmt *VD, Stmt *SubStmt, Expr *Guard)
       : PatternStmt(IdentifierPatternStmtClass, PatternLoc, ColonLoc) {
     setSubStmt(SubStmt);
     setVar(VD);
@@ -748,18 +748,14 @@ public:
   SourceLocation getIdentifierLoc() const { return getPatternLoc(); }
   void setIdentifierLoc(SourceLocation L) { setPatternLoc(L); }
 
-  VarDecl *getVar() {
-    return reinterpret_cast<VarDecl *>(
-        getTrailingObjects<Stmt *>()[varOffset()]);
+  Stmt *getVar() {
+    return getTrailingObjects<Stmt *>()[varOffset()];
   }
-
-  const VarDecl *getVar() const {
-    return reinterpret_cast<VarDecl *>(
-        getTrailingObjects<Stmt *>()[varOffset()]);
+  const Stmt *getVar() const {
+    return getTrailingObjects<Stmt *>()[varOffset()];
   }
-
-  void setVar(VarDecl *VD) {
-    getTrailingObjects<Stmt *>()[varOffset()] = reinterpret_cast<Stmt *>(VD);
+  void setVar(Stmt *VDStmt) {
+    getTrailingObjects<Stmt *>()[varOffset()] = VDStmt;
   }
 
   Stmt *getSubStmt() { return getTrailingObjects<Stmt *>()[subStmtOffset()]; }

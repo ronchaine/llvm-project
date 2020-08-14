@@ -634,10 +634,12 @@ StmtResult Sema::ActOnIdentifierPattern(SourceLocation IdentifierLoc,
   NewVD->markUsed(Context);
   NewVD->setInit(Inspect->getCond());
   PushOnScopeChains(NewVD, CurScope, /*AddToContext*/ true);
+  auto NewVDStmt =
+        ActOnDeclStmt(ConvertDeclToDeclGroup(NewVD), ColonLoc, ColonLoc);
 
   auto *IPS = IdentifierPatternStmt::Create(Context, IdentifierLoc, ColonLoc,
                                             PatternGuard);
-  IPS->setVar(NewVD);
+  IPS->setVar(NewVDStmt.get());
   IPS->setSubStmt(SubStmt);
   Inspect->addPattern(IPS);
 

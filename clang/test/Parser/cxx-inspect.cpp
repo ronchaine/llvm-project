@@ -49,3 +49,11 @@ void trailingReturnTypes() {
     __:;
   }
 }
+
+void patterns() {
+  int x = 3;
+  inspect(x) {
+    __:;
+    y : y++;
+  }
+}
