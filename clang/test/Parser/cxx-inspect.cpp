@@ -2,13 +2,13 @@
 
 void NoParen() {
   inspect 42 { // expected-error {{expected '(' after 'inspect'}}
-    __:;
+    __ =>;
   }
 }
 
 void NoParenConstExpr() {
   inspect constexpr 42 { // expected-error {{expected '(' after 'constexpr'}}
-    __:;
+    __ =>;
   }
 }
 
@@ -20,40 +20,40 @@ void BasicWorkingInspects() {
 
 void trailingReturnTypes() {
   inspect(42) -> int {
-    __:;
+    __ =>;
   }
 
   inspect(42) -> decltype(1) {
-    __:;
+    __ =>;
   }
 
   inspect(42) -> void {
-    __:;
+    __ =>;
   }
 
   int x;
   inspect(42) -> decltype(x) {
-    __:;
+    __ =>;
   }
 
   int y;
   inspect(42) -> y { // expected-error {{unknown type name 'y'}}
-    __:;
+    __ =>;
   }
 
   inspect(42) -> { // expected-error {{expected a type}}
-    __:;
+    __ =>;
   }
 
   inspect(42) -> foo { // expected-error {{unknown type name 'foo'}}
-    __:;
+    __ =>;
   }
 }
 
 void patterns() {
   int x = 3;
   inspect(x) {
-    __:;
-    y : y++;
+    __ =>;
+    y => y++;
   }
 }
