@@ -1087,13 +1087,13 @@ void TextNodeDumper::VisitSwitchStmt(const SwitchStmt *Node) {
     OS << " has_var";
 }
 
-void TextNodeDumper::VisitInspectStmt(const InspectStmt *Node) {
+void TextNodeDumper::VisitInspectExpr(const InspectExpr *Node) {
   if (Node->hasInitStorage())
     OS << " has_init";
   if (Node->hasVarStorage())
     OS << " has_var";
 
-  // TODO: when InspectStmt becomes InspectExpr we should
+  // TODO: when InspectExpr becomes InspectExpr we should
   // match LambdaExpr's printing behavior and output `-> typename`
   if (Node->hasExplicitResultType())
     OS << " has_explicit_result_type";

@@ -2126,22 +2126,22 @@ private:
   StmtResult ParseExprStatement(ParsedStmtContext StmtCtx);
   StmtResult ParseLabeledStatement(ParsedAttributes &Attrs,
                                    ParsedStmtContext StmtCtx);
-  StmtResult ParsePatternStatement(InspectStmt *Inspect,
+  StmtResult ParsePatternStatement(InspectExpr *Inspect,
                                    ParsedAttributesWithRange &attrs,
                                    ParsedStmtContext StmtCtx);
   bool ParsePatternGuard(Sema::ConditionResult &Cond, SourceLocation &IfLoc,
                          bool IsConstexprIf);
   StmtResult ParseWildcardPattern(ParsedStmtContext StmtCtx);
   StmtResult ParseIdentifierPattern(ParsedStmtContext StmtCtx);
-  StmtResult ParseExpressionPattern(InspectStmt *Inspect,
+  StmtResult ParseExpressionPattern(InspectExpr *Inspect,
                                     ParsedStmtContext StmtCtx, Expr *Condition);
-  StmtResult ParseStructuredBindingPattern(InspectStmt *Inspect,
+  StmtResult ParseStructuredBindingPattern(InspectExpr *Inspect,
                                            ParsedStmtContext StmtCtx);
-  StmtResult ParseTypedPattern(InspectStmt *Inspect, ParsedStmtContext StmtCtx);
-  StmtResult ParseCasePattern(InspectStmt *Inspect, ParsedStmtContext StmtCtx);
-  StmtResult ParseBindingPattern(InspectStmt *Inspect,
+  StmtResult ParseTypedPattern(InspectExpr *Inspect, ParsedStmtContext StmtCtx);
+  StmtResult ParseCasePattern(InspectExpr *Inspect, ParsedStmtContext StmtCtx);
+  StmtResult ParseBindingPattern(InspectExpr *Inspect,
                                  ParsedStmtContext StmtCtx);
-  StmtResult ParseParenthesisedPattern(InspectStmt *Inspect,
+  StmtResult ParseParenthesisedPattern(InspectExpr *Inspect,
                                        ParsedStmtContext StmtCtx);
 
   StmtResult ParseCaseStatement(ParsedStmtContext StmtCtx,
@@ -2162,9 +2162,6 @@ private:
                                  SourceLocation &RParenLoc);
   StmtResult ParseIfStatement(SourceLocation *TrailingElseLoc);
   StmtResult ParseSwitchStatement(SourceLocation *TrailingElseLoc);
-  StmtResult ParseInspectStatement(ParsedAttributesWithRange &attrs,
-                                   ParsedStmtContext StmtCtx,
-                                   SourceLocation *TrailingElseLoc);
   StmtResult ParseWhileStatement(SourceLocation *TrailingElseLoc);
   StmtResult ParseDoStatement();
   StmtResult ParseForStatement(SourceLocation *TrailingElseLoc);
@@ -3772,6 +3769,10 @@ private:
   // Embarcadero: Arary and Expression Traits
   ExprResult ParseArrayTypeTrait();
   ExprResult ParseExpressionTrait();
+
+  //===--------------------------------------------------------------------===//
+  // C++ Pattern Matching
+  ExprResult ParseInspectExpr();
 
   //===--------------------------------------------------------------------===//
   // Preprocessor code-completion pass-through

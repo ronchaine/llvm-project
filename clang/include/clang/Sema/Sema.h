@@ -5916,7 +5916,15 @@ public:
   ExprResult ActOnBlockStmtExpr(SourceLocation CaretLoc, Stmt *Body,
                                 Scope *CurScope);
 
-  //===---------------------------- Clang Extensions ----------------------===//
+  //===---------------------------- Pattern Matching ----------------------===//
+
+  ExprResult ActOnStartOfInspectExpr(SourceLocation InspectLoc, Stmt *InitStmt,
+                                     ConditionResult Cond, bool IsConstexpr,
+                                     bool ExplicitReturnType);
+  ExprResult ActOnFinishInspectExpr(SourceLocation InspectLoc, Expr *Inspect,
+                                    Stmt *Body);
+
+ //===---------------------------- Clang Extensions ----------------------===//
 
   /// __builtin_convertvector(...)
   ExprResult ActOnConvertVectorExpr(Expr *E, ParsedType ParsedDestTy,
@@ -8813,11 +8821,6 @@ public:
   StmtResult ActOnExpressionPattern(SourceLocation ExpressionLoc,
                                     SourceLocation ColonLoc, Expr *Condition,
                                     Stmt *SubStmt, Expr *PatternGuard);
-  StmtResult ActOnStartOfInspectStmt(SourceLocation InspectLoc, Stmt *InitStmt,
-                                     ConditionResult Cond, bool IsConstexpr,
-                                     bool ExplicitReturnType);
-  StmtResult ActOnFinishInspectStmt(SourceLocation InspectLoc, Stmt *Inspect,
-                                    Stmt *Body);
 
   /// DiagnoseAssignmentEnum - Warn if assignment to enum is a constant
   /// integer not in the range of enum values.

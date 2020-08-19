@@ -207,9 +207,6 @@ bool ParentMap::isConsumedExpr(Expr* E) const {
       return DirectChild == cast<IndirectGotoStmt>(P)->getTarget();
     case Stmt::SwitchStmtClass:
       return DirectChild == cast<SwitchStmt>(P)->getCond();
-    case Stmt::InspectStmtClass:
-      return DirectChild == cast<InspectStmt>(P)->getCond();
-      break;
     case Stmt::ObjCForCollectionStmtClass:
       return DirectChild == cast<ObjCForCollectionStmt>(P)->getCollection();
     case Stmt::ReturnStmtClass:

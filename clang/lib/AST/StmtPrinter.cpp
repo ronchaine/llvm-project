@@ -369,7 +369,7 @@ void StmtPrinter::VisitSwitchStmt(SwitchStmt *Node) {
   PrintControlledStmt(Node->getBody());
 }
 
-void StmtPrinter::VisitInspectStmt(InspectStmt *Node) {
+void StmtPrinter::VisitInspectExpr(InspectExpr *Node) {
   Indent() << "inspect (";
   if (Node->getInit())
     PrintInitStmt(Node->getInit(), 8);

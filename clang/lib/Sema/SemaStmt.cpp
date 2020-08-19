@@ -586,7 +586,7 @@ StmtResult Sema::ActOnIdentifierPattern(SourceLocation IdentifierLoc,
                                         Expr *PatternGuard) {
   if (getCurFunction()->InspectStack.empty())
     return StmtError();
-  InspectStmt *Inspect = getCurFunction()->InspectStack.back().getPointer();
+  InspectExpr *Inspect = getCurFunction()->InspectStack.back().getPointer();
 
   // Bind the identifier under II to the lvalue condition. Consider
   //
@@ -1242,42 +1242,6 @@ StmtResult Sema::ActOnStartOfSwitchStmt(SourceLocation SwitchLoc,
   getCurFunction()->SwitchStack.push_back(
       FunctionScopeInfo::SwitchInfo(SS, false));
   return SS;
-}
-
-StmtResult Sema::ActOnStartOfInspectStmt(SourceLocation InspectLoc,
-                                         Stmt *InitStmt, ConditionResult Cond,
-                                         bool IsConstexpr,
-                                         bool ExplicitReturnType) {
-  Expr *CondExpr = Cond.get().second;
-  assert((Cond.isInvalid() || CondExpr) && "inspect with no condition");
-
-  setFunctionHasBranchIntoScope();
-
-  auto *IS = InspectStmt::Create(Context, InitStmt, Cond.get().first, CondExpr,
-                                 IsConstexpr, ExplicitReturnType);
-  getCurFunction()->InspectStack.push_back(
-      FunctionScopeInfo::InspectInfo(IS, false));
-  return IS;
-}
-
-StmtResult Sema::ActOnFinishInspectStmt(SourceLocation InspectLoc,
-                                        Stmt *Inspect, Stmt *BodyStmt) {
-
-  InspectStmt *IS = cast<InspectStmt>(Inspect);
-  assert(IS == getCurFunction()->InspectStack.back().getPointer() &&
-         "inspect stack missing push/pop!");
-
-  getCurFunction()->InspectStack.pop_back();
-
-  if (!BodyStmt)
-    return StmtError();
-  IS->setBody(BodyStmt, InspectLoc);
-
-  Expr *CondExpr = IS->getCond();
-  if (!CondExpr)
-    return StmtError();
-
-  return IS;
 }
 
 ExprResult Sema::CheckInspectCondition(SourceLocation InspectLoc, Expr *Cond) {

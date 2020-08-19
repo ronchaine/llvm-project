@@ -4,7 +4,7 @@ void TestInspect(int a, int b) {
   inspect(3) {
     __ =>;
   }
-  // CHECK: InspectStmt 0x{{[^ ]*}} <line:[[@LINE-3]]:3, line:[[@LINE-1]]:3> has_implicit_result_type
+  // CHECK: InspectExpr 0x{{[^ ]*}} <line:[[@LINE-3]]:3, line:[[@LINE-1]]:3> has_implicit_result_type
   // CHECK-NEXT: IntegerLiteral 0x{{[^ ]*}} <line:[[@LINE-4]]:11> 'int' 3
   // CHECK-NEXT: CompoundStmt 0x{{[^ ]*}} <col:14, line:[[@LINE-3]]:3>
   // CHECK-NEXT: WildcardPatternStmt 0x{{[^ ]*}} <line:[[@LINE-5]]:5, col:10>
@@ -13,7 +13,7 @@ void TestInspect(int a, int b) {
   inspect(a) {
     __ if (b>0) =>;
   }
-  // CHECK: InspectStmt 0x{{[^ ]*}} <line:[[@LINE-3]]:3, line:[[@LINE-1]]:3> has_implicit_result_type
+  // CHECK: InspectExpr 0x{{[^ ]*}} <line:[[@LINE-3]]:3, line:[[@LINE-1]]:3> has_implicit_result_type
   // CHECK: WildcardPatternStmt 0x{{[^ ]*}} <line:[[@LINE-3]]:5, col:19> has_guard
   // CHECK-NEXT: NullStmt 0x{{[^ ]*}} <col:19>
   // CHECK-NEXT: BinaryOperator 0x{{[^ ]*}} <col:12, col:14> 'bool' '>'
@@ -21,7 +21,7 @@ void TestInspect(int a, int b) {
   inspect(3) -> int {
     __ =>;
   }
-  // CHECK: InspectStmt 0x{{[^ ]*}} <line:[[@LINE-3]]:3, line:[[@LINE-1]]:3> has_explicit_result_type
+  // CHECK: InspectExpr 0x{{[^ ]*}} <line:[[@LINE-3]]:3, line:[[@LINE-1]]:3> has_explicit_result_type
   // CHECK-NEXT: IntegerLiteral 0x{{[^ ]*}} <line:[[@LINE-4]]:11> 'int' 3
   // CHECK-NEXT: CompoundStmt 0x{{[^ ]*}} <col:21, line:[[@LINE-3]]:3>
   // CHECK-NEXT: WildcardPatternStmt 0x{{[^ ]*}} <line:[[@LINE-5]]:5, col:10>
@@ -31,7 +31,7 @@ void TestInspect(int a, int b) {
   inspect(x) {
     y => y++;
   }
-  // CHECK: InspectStmt 0x{{[^ ]*}} <line:[[@LINE-3]]:3, line:[[@LINE-1]]:3> has_implicit_result_type
+  // CHECK: InspectExpr 0x{{[^ ]*}} <line:[[@LINE-3]]:3, line:[[@LINE-1]]:3> has_implicit_result_type
   // CHECK: IdentifierPatternStmt 0x{{[^ ]*}} <line:[[@LINE-3]]:5, col:11>
   // CHECK-NEXT: UnaryOperator 0x{{[^ ]*}} <col:10, col:11> 'int':'int' postfix '++'
   // CHECK-NEXT: DeclRefExpr 0x{{[^ ]*}} <col:10> 'int':'int' lvalue Var 0x{{[^ ]*}} 'y' 'int &'

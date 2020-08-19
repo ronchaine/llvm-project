@@ -9338,3 +9338,39 @@ ExprResult Sema::ActOnRequiresExpr(
     return ExprError();
   return RE;
 }
+
+ExprResult Sema::ActOnStartOfInspectExpr(SourceLocation InspectLoc,
+                                         Stmt *InitStmt, ConditionResult Cond,
+                                         bool IsConstexpr,
+                                         bool ExplicitReturnType) {
+  Expr *CondExpr = Cond.get().second;
+  assert((Cond.isInvalid() || CondExpr) && "inspect with no condition");
+
+  setFunctionHasBranchIntoScope();
+
+  auto *IE = InspectExpr::Create(Context, InitStmt, Cond.get().first, CondExpr,
+                                 IsConstexpr, ExplicitReturnType);
+  getCurFunction()->InspectStack.push_back(
+      FunctionScopeInfo::InspectInfo(IE, false));
+  return IE;
+}
+
+ExprResult Sema::ActOnFinishInspectExpr(SourceLocation InspectLoc,
+                                        Expr *Inspect, Stmt *BodyStmt) {
+
+  InspectExpr *IE = cast<InspectExpr>(Inspect);
+  assert(IE == getCurFunction()->InspectStack.back().getPointer() &&
+         "inspect stack missing push/pop!");
+
+  getCurFunction()->InspectStack.pop_back();
+
+  if (!BodyStmt)
+    return ExprError();
+  IE->setBody(BodyStmt, InspectLoc);
+
+  Expr *CondExpr = IE->getCond();
+  if (!CondExpr)
+    return ExprError();
+
+  return IE;
+}

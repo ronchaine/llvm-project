@@ -3372,7 +3372,7 @@ public:
   void EmitCaseStmt(const CaseStmt &S, ArrayRef<const Attr *> Attrs);
   void EmitCaseStmtRange(const CaseStmt &S, ArrayRef<const Attr *> Attrs);
 
-  void EmitInspectStmt(const InspectStmt &S);
+  void EmitInspectExpr(const InspectExpr &S);
   void EmitWildcardPatternStmt(const WildcardPatternStmt &S);
   void EmitIdentifierPatternStmt(const IdentifierPatternStmt &S);
   void EmitExpressionPatternStmt(const ExpressionPatternStmt &S);

@@ -251,7 +251,7 @@ public:
 
   void VisitIfStmt(const IfStmt *Node);
   void VisitSwitchStmt(const SwitchStmt *Node);
-  void VisitInspectStmt(const InspectStmt *Node);
+  void VisitInspectExpr(const InspectExpr *Node);
   void VisitWildcardPatternStmt(const WildcardPatternStmt *Node);
   void VisitIdentifierPatternStmt(const IdentifierPatternStmt *Node);
   void VisitExpressionPatternStmt(const ExpressionPatternStmt *Node);

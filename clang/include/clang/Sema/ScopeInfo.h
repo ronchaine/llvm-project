@@ -209,9 +209,9 @@ public:
   /// block.
   SmallVector<SwitchInfo, 8> SwitchStack;
 
-  /// A InspectStmt, along with a flag indicating if its list of patterns
+  /// A InspectExpr, along with a flag indicating if its list of patterns
   /// is incomplete (because we dropped an invalid one while parsing).
-  using InspectInfo = llvm::PointerIntPair<InspectStmt *, 1, bool>;
+  using InspectInfo = llvm::PointerIntPair<InspectExpr *, 1, bool>;
 
   /// InspectStack - This is the current set of active inspect statements in the
   /// block.

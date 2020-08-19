@@ -329,7 +329,7 @@ public:
 
   void VisitIfStmt(const IfStmt *IS);
   void VisitSwitchStmt(const SwitchStmt *SS);
-  void VisitInspectStmt(const InspectStmt *IS);
+  void VisitInspectExpr(const InspectExpr *IS);
   void VisitWildcardPatrternStmt(const WildcardPatternStmt *WPS);
   void VisitIdentifierPatternStmt(const IdentifierPatternStmt *IPS);
   void VisitExpressionPatternStmt(const ExpressionPatternStmt *EPS);

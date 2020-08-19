@@ -274,7 +274,7 @@ void ASTStmtReader::VisitSwitchStmt(SwitchStmt *S) {
   }
 }
 
-void ASTStmtReader::VisitInspectStmt(InspectStmt *S) {
+void ASTStmtReader::VisitInspectExpr(InspectExpr *S) {
   VisitStmt(S);
 
   bool HasInit = Record.readInt();
@@ -3007,8 +3007,8 @@ Stmt *ASTReader::ReadStmtFromStream(ModuleFile &F) {
           /* HasVar=*/Record[ASTStmtReader::NumStmtFields + 1]);
       break;
 
-    case STMT_INSPECT:
-      S = InspectStmt::CreateEmpty(
+    case EXPR_INSPECT:
+      S = InspectExpr::CreateEmpty(
           Context,
           /* HasInit=*/Record[ASTStmtReader::NumStmtFields],
           /* HasVar=*/Record[ASTStmtReader::NumStmtFields + 1]);

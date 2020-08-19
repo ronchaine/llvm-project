@@ -192,8 +192,8 @@ CXCursor cxcursor::MakeCXCursor(const Stmt *S, const Decl *Parent,
     K = CXCursor_SwitchStmt;
     break;
 
-  case Stmt::InspectStmtClass:
-    K = CXCursor_InspectStmt;
+  case Stmt::InspectExprClass:
+    K = CXCursor_InspectExpr;
     break;
 
   case Stmt::WildcardPatternStmtClass:

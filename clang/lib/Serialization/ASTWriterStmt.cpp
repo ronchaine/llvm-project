@@ -254,8 +254,8 @@ void ASTStmtWriter::VisitSwitchStmt(SwitchStmt *S) {
   Code = serialization::STMT_SWITCH;
 }
 
-void ASTStmtWriter::VisitInspectStmt(InspectStmt *S) {
-  VisitStmt(S);
+void ASTStmtWriter::VisitInspectExpr(InspectExpr *S) {
+  VisitExpr(S);
 
   bool HasInit = S->getInit() != nullptr;
   bool HasVar = S->getConditionVariableDeclStmt() != nullptr;
@@ -272,7 +272,7 @@ void ASTStmtWriter::VisitInspectStmt(InspectStmt *S) {
 
   for (PatternStmt *PS = S->getPatternList(); PS; PS = PS->getNextPattern())
     Record.push_back(Writer.RecordInspectPatternID(PS));
-  Code = serialization::STMT_INSPECT;
+  Code = serialization::EXPR_INSPECT;
 }
 
 void ASTStmtWriter::VisitPatternStmt(PatternStmt *S) {

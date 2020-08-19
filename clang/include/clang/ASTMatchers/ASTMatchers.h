@@ -2357,18 +2357,18 @@ extern const internal::VariadicDynCastAllOfMatcher<Stmt, CaseStmt> caseStmt;
 extern const internal::VariadicDynCastAllOfMatcher<Stmt, DefaultStmt>
     defaultStmt;
 
-/// Matches inspect statements.
+/// Matches inspect expressions.
 ///
 /// Given
 /// \code
 ///   inspect(a) { }
 /// \endcode
-/// inspectStmt()
+/// InspectExpr()
 ///   matches 'inspect(a)'.
-extern const internal::VariadicDynCastAllOfMatcher<Stmt, InspectStmt>
-    inspectStmt;
+extern const internal::VariadicDynCastAllOfMatcher<Stmt, InspectExpr>
+    inspectExpr;
 
-/// Matches pattern statements inside inspect statements.
+/// Matches pattern statements inside inspect expressions.
 ///
 /// Given
 /// \code
@@ -2379,7 +2379,7 @@ extern const internal::VariadicDynCastAllOfMatcher<Stmt, InspectStmt>
 extern const internal::VariadicDynCastAllOfMatcher<Stmt, PatternStmt>
     patternStmt;
 
-/// Matches wildcard pattern statements inside inspect statements.
+/// Matches wildcard pattern statements inside inspect expressions.
 ///
 /// Given
 /// \code
@@ -2390,7 +2390,7 @@ extern const internal::VariadicDynCastAllOfMatcher<Stmt, PatternStmt>
 extern const internal::VariadicDynCastAllOfMatcher<Stmt, WildcardPatternStmt>
     wildcardPatternStmt;
 
-/// Matches identifier pattern statements inside inspect statements.
+/// Matches identifier pattern statements inside inspect expressions.
 ///
 /// Given
 /// \code
@@ -2401,7 +2401,7 @@ extern const internal::VariadicDynCastAllOfMatcher<Stmt, WildcardPatternStmt>
 extern const internal::VariadicDynCastAllOfMatcher<Stmt, IdentifierPatternStmt>
     identifierPatternStmt;
 
-/// Matches expression pattern statements inside inspect statements.
+/// Matches expression pattern statements inside inspect expressions.
 ///
 /// Given
 /// \code
@@ -5656,7 +5656,7 @@ AST_POLYMORPHIC_MATCHER_P(hasInitStatement,
 AST_POLYMORPHIC_MATCHER_P(hasCondition,
                           AST_POLYMORPHIC_SUPPORTED_TYPES(
                               IfStmt, ForStmt, WhileStmt, DoStmt, SwitchStmt,
-                              InspectStmt, AbstractConditionalOperator),
+                              InspectExpr, AbstractConditionalOperator),
                           internal::Matcher<Expr>, InnerMatcher) {
   const Expr *const Condition = Node.getCond();
   return (Condition != nullptr &&
@@ -7954,7 +7954,7 @@ AST_MATCHER_P(SwitchStmt, forEachSwitchCase, internal::Matcher<SwitchCase>,
 /// \code
 ///   inspect (a) { }
 /// \endcode
-AST_MATCHER_P(InspectStmt, forEachInspectPattern,
+AST_MATCHER_P(InspectExpr, forEachInspectPattern,
               internal::Matcher<PatternStmt>, InnerMatcher) {
   BoundNodesTreeBuilder Result;
 

@@ -2151,9 +2151,9 @@ enum CXCursorKind {
 
   CXCursor_LastStmt = CXCursor_OpenACCComputeConstruct,
 
-  /** An inspect statement.
+  /** An inspect expression.
    */
-  CXCursor_InspectStmt = 321,
+  CXCursor_InspectExpr = 321,
 
   /** A wildcard pattern statement.
    */
