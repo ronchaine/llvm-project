@@ -2375,3 +2375,47 @@ llvm::Value *CodeGenFunction::EmitDynamicCast(Address ThisAddr,
 
   return Value;
 }
+
+static const char *GetPatternName(const PatternStmt *S) {
+  if (!S)
+    return "";
+  if (const auto *WPS = dyn_cast<WildcardPatternStmt>(S))
+    return "pat.wildcard";
+  if (const auto *IPS = dyn_cast<IdentifierPatternStmt>(S))
+    return "pat.id";
+  if (const auto *EPS = dyn_cast<ExpressionPatternStmt>(S))
+    return "pat.exp";
+  llvm_unreachable("unexpected pattern type");
+}
+
+RValue CodeGenFunction::EmitInspectExpr(const InspectExpr &S) {
+  // FIXME: check if we can constant fold to simple integer,
+  // just like switch does.
+  Address InspectResAddr = CreateMemTemp(S.getType(), "inspect.result");
+
+  if (S.getInit())
+    EmitStmt(S.getInit());
+
+  if (S.getConditionVariable())
+    EmitDecl(*S.getConditionVariable());
+
+  // FIXME: what do do about empty inspect statements, will
+  // it get to this point?
+
+  // FIXME: for integral types we should use LLVM switch instruction,
+  // just like switch statements do.
+
+  // Save inspect context in order to support multiple nested ones.
+  auto PrevInspectCtx = InspectCtx;
+
+  InspectCtx.InspectResult = InspectResAddr;
+  InspectCtx.InspectExit = createBasicBlock("inspect.epilogue");
+  InspectCtx.NextPattern = createBasicBlock(GetPatternName(S.getPatternList()));
+
+  // Emit inspect body.
+  EmitStmt(S.getBody());
+  EmitBlock(InspectCtx.InspectExit);
+
+  InspectCtx = PrevInspectCtx;
+  return convertTempToRValue(InspectResAddr, S.getType(), SourceLocation());
+}

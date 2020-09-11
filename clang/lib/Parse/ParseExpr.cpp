@@ -1850,7 +1850,8 @@ ExprResult Parser::ParseCastExpression(CastParseKind ParseKind,
     }
     [[fallthrough]];
   case tok::kw_match: // C++ P2688 Pattern Matching: inspect-statement
-    return ParseInspectExpr();
+    Res = ParseInspectExpr();
+    break;
   default:
   ExpectedExpression:
     NotCastExpr = true;

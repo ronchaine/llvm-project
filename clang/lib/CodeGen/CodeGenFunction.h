@@ -1650,6 +1650,7 @@ private:
   struct InspectContext {
     llvm::BasicBlock *NextPattern = nullptr;
     llvm::BasicBlock *InspectExit = nullptr;
+    Address InspectResult = Address::invalid();
   };
   InspectContext InspectCtx;
 
@@ -3372,7 +3373,6 @@ public:
   void EmitCaseStmt(const CaseStmt &S, ArrayRef<const Attr *> Attrs);
   void EmitCaseStmtRange(const CaseStmt &S, ArrayRef<const Attr *> Attrs);
 
-  void EmitInspectExpr(const InspectExpr &S);
   void EmitWildcardPatternStmt(const WildcardPatternStmt &S);
   void EmitIdentifierPatternStmt(const IdentifierPatternStmt &S);
   void EmitExpressionPatternStmt(const ExpressionPatternStmt &S);
@@ -4698,6 +4698,8 @@ public:
   void EmitCXXThrowExpr(const CXXThrowExpr *E, bool KeepInsertionPoint = true);
 
   RValue EmitAtomicExpr(AtomicExpr *E);
+
+  RValue EmitInspectExpr(const InspectExpr &S);
 
   //===--------------------------------------------------------------------===//
   //                         Annotations Emission

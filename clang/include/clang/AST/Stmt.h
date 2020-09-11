@@ -4067,6 +4067,8 @@ class WildcardPatternStmt final
   // WildcardPatternStmt is followed by several trailing objects.
   //
   // * A "Stmt *" for the substatement of the pattern statement. Always present.
+  //   In case of non void return types, this is in fact a "Expr *" but accessors
+  //   are still on a "Stmt *" basis, differently from the condition.
   //
   // * A "Stmt *" for the condition.
   //    Present if and only if hasPatternGuard(). This is in fact a "Expr *".

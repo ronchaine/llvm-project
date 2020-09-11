@@ -930,7 +930,7 @@ StmtResult Parser::ParseWildcardPattern(ParsedStmtContext StmtCtx) {
 
   if (!Tok.is(tok::equalarrow)) {
     Diag(Tok, diag::err_expected_equalarrow_after)
-        << (IfLoc.isInvalid() ? WildcardLoc : IfLoc);
+        << "wildcard pattern";
     SkipUntil(tok::semi);
     return StmtError();
   }
@@ -941,6 +941,8 @@ StmtResult Parser::ParseWildcardPattern(ParsedStmtContext StmtCtx) {
   // '__' pattern-guard[opt] '=>' statement
   //                              ^
   StmtResult SubStmt = ParseStatement(nullptr, StmtCtx);
+  // FIXME: look at '{' and parse as returning void.
+  //StmtResult SubStmt = ParseExprStatement(StmtCtx);
 
   // Broken substmt shouldn't prevent the identifier from being added to the
   // AST.
@@ -1434,6 +1436,11 @@ StmtResult Parser::handleExprStmt(ExprResult E, ParsedStmtContext StmtCtx) {
     IsStmtExprResult = GetLookAheadToken(LookAhead).is(tok::r_brace) &&
                        GetLookAheadToken(LookAhead + 1).is(tok::r_paren);
   }
+
+  // FIXME: Maybe have pattern specific EK instead of reusing EK_StmtExprResult?
+  // FIXME: Make sure pattern with compound statements (void) don't get here?
+  if (getCurScope()->isPatternScope())
+    IsStmtExprResult = true;
 
   if (IsStmtExprResult)
     E = Actions.ActOnStmtExprResult(E);

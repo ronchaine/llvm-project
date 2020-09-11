@@ -9342,16 +9342,25 @@ ExprResult Sema::ActOnRequiresExpr(
 ExprResult Sema::ActOnStartOfInspectExpr(SourceLocation InspectLoc,
                                          Stmt *InitStmt, ConditionResult Cond,
                                          bool IsConstexpr,
-                                         bool ExplicitReturnType) {
+                                         TypeResult ReturnType) {
   Expr *CondExpr = Cond.get().second;
   assert((Cond.isInvalid() || CondExpr) && "inspect with no condition");
 
   setFunctionHasBranchIntoScope();
 
   auto *IE = InspectExpr::Create(Context, InitStmt, Cond.get().first, CondExpr,
-                                 IsConstexpr, ExplicitReturnType);
+                                 IsConstexpr, !ReturnType.isInvalid());
   getCurFunction()->InspectStack.push_back(
       FunctionScopeInfo::InspectInfo(IE, false));
+
+  TypeSourceInfo *TSI = nullptr;
+  QualType RetTy = GetTypeFromParser(ReturnType.get(), &TSI);
+  assert(TSI && "must be valid at this point");
+  if (TSI->getTypeLoc().getAs<TemplateSpecializationTypeLoc>() ||
+      RetTy->isDependentType()) {
+    assert(0 && "cannot handle templates just yet");
+  }
+  IE->setType(RetTy);
   return IE;
 }
 
@@ -9370,6 +9379,42 @@ ExprResult Sema::ActOnFinishInspectExpr(SourceLocation InspectLoc,
 
   Expr *CondExpr = IE->getCond();
   if (!CondExpr)
+    return ExprError();
+
+  /// There are multiple checks that need to be applied here:
+  ///
+  ///   (1) All patterns must agree on the return type. (WIP)
+  ///   (2) The common return type must match the trailing return
+  ///       type, or be the deduced one otherwise. (TODO)
+  ///   (3) Exaustiviness checking...
+  const PatternStmt *P = IE->getPatternList();
+
+  // FIXME: instead make all PatternStmt have a substmt as trailing object
+  auto getExprResultFromPattern = [](const PatternStmt *PS) -> const Stmt * {
+    if (auto *S = dyn_cast<WildcardPatternStmt>(PS))
+      return S->getSubStmt();
+    else if (auto *S = dyn_cast<IdentifierPatternStmt>(PS))
+      return S->getSubStmt();
+    assert(0 && "Not supposed to get here");
+    return nullptr;
+  };
+
+  QualType T = IE->getType();
+  for (; P != nullptr; P = P->getNextPattern()) {
+    const Expr *Res = cast<Expr>(getExprResultFromPattern(P));
+
+    if (T.isNull())
+      IE->setType(Res->getType());
+
+    // FIXME: this looks like a rather bad type comparison? what about
+    // implicit conversions and all that stuff? Find the proper way to
+    // do this.
+    if (Res->getType() != T);
+      // emit warning/error
+  }
+
+  // FIXME: maybe have an assertion? what would be better for error recovery?
+  if (IE->getType().isNull())
     return ExprError();
 
   return IE;

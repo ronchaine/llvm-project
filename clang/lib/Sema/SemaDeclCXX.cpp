@@ -2227,6 +2227,7 @@ CheckConstexprFunctionStmt(Sema &SemaRef, const FunctionDecl *Dcl, Stmt *S,
   case Stmt::WildcardPatternStmtClass:
   case Stmt::IdentifierPatternStmtClass:
   case Stmt::ExpressionPatternStmtClass:
+    assert(0 && "Not implemented");
     break;
 
   case Stmt::GCCAsmStmtClass:

@@ -2210,31 +2210,6 @@ static const char *GetPatternName(const PatternStmt *S) {
   llvm_unreachable("unexpected pattern type");
 }
 
-void CodeGenFunction::EmitInspectExpr(const InspectExpr &S) {
-  // FIXME: check if we can constant fold to simple integer,
-  // just like switch does.
-
-  if (S.getInit())
-    EmitStmt(S.getInit());
-
-  if (S.getConditionVariable())
-    EmitDecl(*S.getConditionVariable());
-
-  // FIXME: what do do about empty inspect statements, will
-  // it get to this point?
-
-  // Save inspect context in order to support multiple nested ones.
-  auto PrevInspectCtx = InspectCtx;
-  InspectCtx.InspectExit = createBasicBlock("inspect.epilogue");
-  InspectCtx.NextPattern = createBasicBlock(GetPatternName(S.getPatternList()));
-
-  // Emit inspect body.
-  EmitStmt(S.getBody());
-  EmitBlock(InspectCtx.InspectExit);
-
-  InspectCtx = PrevInspectCtx;
-}
-
 void CodeGenFunction::EmitWildcardPatternStmt(const WildcardPatternStmt &S) {
   assert(InspectCtx.InspectExit && "Expected associated inspect statement");
 
@@ -2254,9 +2229,41 @@ void CodeGenFunction::EmitWildcardPatternStmt(const WildcardPatternStmt &S) {
     EmitBranchOnBoolExpr(S.getPatternGuard(), ThisPattern, NextPattern,
                          getProfileCount(S.getSubStmt()));
 
-  // Emit code for the statement following the pattern and branch to the
-  // next block after inspect.
-  EmitStmt(S.getSubStmt());
+  // Emit code for the pattern body, which could be a pure statement or a
+  // expression statement.
+  if (const Expr *E = dyn_cast<Expr>(S.getSubStmt())) {
+    // No result to store, but evaluate the expression for side effects.
+    if (E->getType()->isVoidType()) {
+      EmitAnyExpr(E);
+    } else if (FnRetTy->isReferenceType()) {
+      // If the expr is a reference, take the address of the expression
+      // rather than the value.
+      RValue Result = EmitReferenceBindingToExpr(E);
+      Builder.CreateStore(Result.getScalarVal(), InspectCtx.InspectResult);
+    } else {
+      switch (getEvaluationKind(E->getType())) {
+      case TEK_Scalar:
+        Builder.CreateStore(EmitScalarExpr(E), InspectCtx.InspectResult);
+        break;
+      case TEK_Complex:
+        EmitComplexExprIntoLValue(E, MakeAddrLValue(InspectCtx.InspectResult, E->getType()),
+                                  /*isInit*/ true);
+        break;
+      case TEK_Aggregate:
+        EmitAggExpr(E, AggValueSlot::forAddr(
+                            InspectCtx.InspectResult, Qualifiers(),
+                            AggValueSlot::IsDestructed,
+                            AggValueSlot::DoesNotNeedGCBarriers,
+                            AggValueSlot::IsNotAliased,
+                            getOverlapForReturnValue()));
+        break;
+      }
+    }
+  } else {
+    EmitStmt(S.getSubStmt());
+  }
+
+  // Banch to the next block after inspect.
   EmitBranch(InspectCtx.InspectExit);
 }
 
