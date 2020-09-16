@@ -9388,7 +9388,11 @@ ExprResult Sema::ActOnFinishInspectExpr(SourceLocation InspectLoc,
 
   // FIXME: instead make all PatternStmt have a substmt as trailing object
   auto getPatternExprType = [&](const PatternStmt *PS) -> QualType {
-    if (isa<CompoundStmt>(PS->getSubStmt()))
+    // Compound statements in patterns yield void and null stmts might be
+    // happen when (1) empty pattern body or (2) error recovery when expression
+    // type does not match the trailing result type. In all cases treat as
+    // the expression has void type.
+    if (isa<CompoundStmt>(PS->getSubStmt()) || isa<NullStmt>(P->getSubStmt()))
       return Context.VoidTy;
     if (auto *S = dyn_cast<WildcardPatternStmt>(PS))
       return cast<Expr>(S->getSubStmt())->getType();
@@ -9407,11 +9411,6 @@ ExprResult Sema::ActOnFinishInspectExpr(SourceLocation InspectLoc,
   // the trailing result type or resulting type found in first pattern's
   // expression.
   for (; P != nullptr; P = P->getNextPattern()) {
-    // Handles error recovery when expression type does not match the
-    // trailing result type.
-    if (isa<NullStmt>(P->getSubStmt()))
-      continue;
-
     // FIXME: Should we be looking into the unqualified type here?
     QualType PatternResTy = getPatternExprType(P).getUnqualifiedType();
 
