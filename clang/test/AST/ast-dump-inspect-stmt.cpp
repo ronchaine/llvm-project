@@ -1,41 +1,41 @@
-// RUN: %clang_cc1 -fsyntax-only -fpattern-matching -ast-dump %s | FileCheck %s
+// RUN: %clang_cc1 -fsyntax-only -fpattern-matching -ast-dump -Wno-unused-value %s | FileCheck %s
 
 void TestInspect(int a, int b) {
   inspect(3) {
-    __ =>;
-  }
-  // CHECK: InspectExpr 0x{{[^ ]*}} <line:[[@LINE-3]]:3, line:[[@LINE-1]]:3> has_implicit_result_type
+    __ => {};
+  };
+  // CHECK: InspectExpr 0x{{[^ ]*}} <line:[[@LINE-3]]:3, line:[[@LINE-1]]:3> 'void' has_implicit_result_type
   // CHECK-NEXT: IntegerLiteral 0x{{[^ ]*}} <line:[[@LINE-4]]:11> 'int' 3
   // CHECK-NEXT: CompoundStmt 0x{{[^ ]*}} <col:14, line:[[@LINE-3]]:3>
-  // CHECK-NEXT: WildcardPatternStmt 0x{{[^ ]*}} <line:[[@LINE-5]]:5, col:10>
-  // CHECK-NEXT: NullStmt
+  // CHECK-NEXT: WildcardPatternStmt 0x{{[^ ]*}} <line:[[@LINE-5]]:5, col:12>
+  // CHECK-NEXT: CompoundStmt
 
   inspect(a) {
-    __ if (b>0) =>;
-  }
-  // CHECK: InspectExpr 0x{{[^ ]*}} <line:[[@LINE-3]]:3, line:[[@LINE-1]]:3> has_implicit_result_type
-  // CHECK: WildcardPatternStmt 0x{{[^ ]*}} <line:[[@LINE-3]]:5, col:19> has_guard
-  // CHECK-NEXT: NullStmt 0x{{[^ ]*}} <col:19>
+    __ if (b>0) => {};
+  };
+  // CHECK: InspectExpr 0x{{[^ ]*}} <line:[[@LINE-3]]:3, line:[[@LINE-1]]:3> 'void' has_implicit_result_type
+  // CHECK: WildcardPatternStmt 0x{{[^ ]*}} <line:[[@LINE-3]]:5, col:21> has_guard
+  // CHECK-NEXT: CompoundStmt
   // CHECK-NEXT: BinaryOperator 0x{{[^ ]*}} <col:12, col:14> 'bool' '>'
 
-  inspect(3) -> int {
-    __ =>;
-  }
-  // CHECK: InspectExpr 0x{{[^ ]*}} <line:[[@LINE-3]]:3, line:[[@LINE-1]]:3> has_explicit_result_type
+  inspect(3) -> void {
+    __ => {};
+  };
+  // CHECK: InspectExpr 0x{{[^ ]*}} <line:[[@LINE-3]]:3, line:[[@LINE-1]]:3> 'void' has_explicit_result_type
   // CHECK-NEXT: IntegerLiteral 0x{{[^ ]*}} <line:[[@LINE-4]]:11> 'int' 3
-  // CHECK-NEXT: CompoundStmt 0x{{[^ ]*}} <col:21, line:[[@LINE-3]]:3>
-  // CHECK-NEXT: WildcardPatternStmt 0x{{[^ ]*}} <line:[[@LINE-5]]:5, col:10>
-  // CHECK-NEXT: NullStmt
+  // CHECK-NEXT: CompoundStmt
+  // CHECK-NEXT: WildcardPatternStmt 0x{{[^ ]*}} <line:[[@LINE-5]]:5, col:12>
+  // CHECK-NEXT: CompoundStmt
 
   int x = 3;
-  inspect(x) {
+  int w = inspect(x) -> int {
     y => y++;
-  }
-  // CHECK: InspectExpr 0x{{[^ ]*}} <line:[[@LINE-3]]:3, line:[[@LINE-1]]:3> has_implicit_result_type
+  };
+  // CHECK: InspectExpr {{.*}}'int' has_explicit_result_type
   // CHECK: IdentifierPatternStmt 0x{{[^ ]*}} <line:[[@LINE-3]]:5, col:11>
   // CHECK-NEXT: UnaryOperator 0x{{[^ ]*}} <col:10, col:11> 'int':'int' postfix '++'
   // CHECK-NEXT: DeclRefExpr 0x{{[^ ]*}} <col:10> 'int':'int' lvalue Var 0x{{[^ ]*}} 'y' 'int &'
   // CHECK-NEXT: DeclStmt 0x{{[^ ]*}} <col:7>
-  // CHECK-NEXT: VarDecl 0x{{[^ ]*}} <col:5, line:[[@LINE-8]]:11> line:[[@LINE-7]]:5 used y 'int &' auto cinit
+  // CHECK-NEXT: VarDecl 0x{{.*}} used y 'int &' auto cinit
 }
 

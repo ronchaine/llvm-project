@@ -1,59 +1,54 @@
-// RUN: %clang_cc1 -fsyntax-only -verify -fpattern-matching %s
+// RUN: %clang_cc1 -fsyntax-only -verify -fpattern-matching -Wno-unused-value %s
 
-void NoParen() {
+void noParen() {
   inspect 42 { // expected-error {{expected '(' after 'inspect'}}
-    __ =>;
+    __ => {};
   }
 }
 
-void NoParenConstExpr() {
+void noParenConstExpr() {
   inspect constexpr 42 { // expected-error {{expected '(' after 'constexpr'}}
-    __ =>;
+    __ => {};
   }
-}
-
-void BasicWorkingInspects() {
-  inspect(42) {}
-
-  inspect constexpr(42) {}
 }
 
 void trailingReturnTypes() {
-  inspect(42) -> int {
-    __ =>;
-  }
+  int r = 0;
+  r = inspect(42) -> int {
+    __ => 3;
+  };
 
-  inspect(42) -> decltype(1) {
-    __ =>;
-  }
+  r = inspect(42) -> decltype(1) {
+    __ => 3;
+  };
 
   inspect(42) -> void {
-    __ =>;
-  }
+    __ => {};
+  };
 
   int x;
-  inspect(42) -> decltype(x) {
-    __ =>;
-  }
+  r = inspect(42) -> decltype(x) {
+    __ => 3;
+  };
 
   int y;
   inspect(42) -> y { // expected-error {{unknown type name 'y'}}
-    __ =>;
-  }
+    __ => {};
+  };
 
   inspect(42) -> { // expected-error {{expected a type}}
-    __ =>;
-  }
+    __ => {};
+  };
 
   inspect(42) -> foo { // expected-error {{unknown type name 'foo'}}
-    __ =>;
-  }
+    __ => {};
+  };
 }
 
-void patterns() {
+int idPattern() {
   int x = 3;
-  inspect(x) {
-    __ =>;
+  return inspect(x) {
     y => y++;
-  }
+    __ => 3;
+  };
 }

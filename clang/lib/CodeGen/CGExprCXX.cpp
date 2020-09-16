@@ -2391,7 +2391,10 @@ static const char *GetPatternName(const PatternStmt *S) {
 RValue CodeGenFunction::EmitInspectExpr(const InspectExpr &S) {
   // FIXME: check if we can constant fold to simple integer,
   // just like switch does.
-  Address InspectResAddr = CreateMemTemp(S.getType(), "inspect.result");
+
+  Address InspectResAddr = Address::invalid();
+  if (!S.getType()->isVoidType())
+    InspectResAddr = CreateMemTemp(S.getType(), "inspect.result");
 
   if (S.getInit())
     EmitStmt(S.getInit());
@@ -2417,5 +2420,9 @@ RValue CodeGenFunction::EmitInspectExpr(const InspectExpr &S) {
   EmitBlock(InspectCtx.InspectExit);
 
   InspectCtx = PrevInspectCtx;
+
+  if (S.getType()->isVoidType())
+    return RValue::getIgnored();
+
   return convertTempToRValue(InspectResAddr, S.getType(), SourceLocation());
 }

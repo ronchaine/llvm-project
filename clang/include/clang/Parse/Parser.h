@@ -440,13 +440,16 @@ class Parser : public CodeCompletionHandler {
     AllowStandaloneOpenMPDirectives = 0x1,
     /// This context is at the top level of a GNU statement expression.
     InStmtExpr = 0x2,
+    /// This context of a compound-statement when used with inspect patterns
+    /// that do not yield values.
+    InPatternCompoundStmt = 0x4,
 
     /// The context of a regular substatement.
     SubStmt = 0,
     /// The context of a compound-statement.
     Compound = AllowStandaloneOpenMPDirectives,
 
-    LLVM_MARK_AS_BITMASK_ENUM(InStmtExpr)
+    LLVM_MARK_AS_BITMASK_ENUM(InPatternCompoundStmt)
   };
 
   /// Act on an expression statement that might be the last statement in a

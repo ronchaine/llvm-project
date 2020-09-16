@@ -1,26 +1,30 @@
-// RUN: %clang_cc1 -triple i386-unknown-unknown -fpattern-matching -emit-llvm %s -o - | FileCheck %s
+// RUN: %clang_cc1 -triple i386-unknown-unknown -fpattern-matching -Wno-unused-value -emit-llvm %s -o - | FileCheck %s
 
 // CHECK-LABEL: _Z13test_wildcardi
 int test_wildcard(int n) {
-  int x = n+1;
-  inspect(n) { // CHECK: br label %pat.wildcard
+  int x = n+1; // CHECK: %inspect.result{{.*}}alloca
+  int w = inspect(n) { // CHECK: br label %pat.wildcard
     // CHECK: pat.wildcard
+    // CHECK: store{{.*}}%inspect.result
     __ => x++; // CHECK: br label %inspect.epilogue
-  }
-  return x;
+  };
+  // CHECK: load{{.*}}%inspect.result
+  return w;
 }
 
-int test_wildcard2(int n) {
+// CHECK-LABEL: _Z14test_wildcard2i
+void test_wildcard2(int n) {
+  // CHECK-NOT: %inspect.result =
   inspect(n) { // CHECK: br label %pat.wildcard
-    // CHECK: pat.wildcard
     __ => {
+      // CHECK: pat.wildcard
       n++;
-      inspect(n) { // CHECK: br label %pat.wildcard1
+      inspect(n) -> void { // CHECK: br label %pat.wildcard1
         // CHECK: inspect.epilogue
-        __ => n++; // CHECK: br label %inspect.epilogue3
-      }
+        __ => (void)n++; // CHECK: br label %inspect.epilogue3
+      };
     }
-  }
+  };
+  // CHECK-NOT: load{{.*}}%inspect.result
   // CHECK: inspect.epilogue3
-  return n;
 }

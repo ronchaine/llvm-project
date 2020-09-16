@@ -9353,6 +9353,9 @@ ExprResult Sema::ActOnStartOfInspectExpr(SourceLocation InspectLoc,
   getCurFunction()->InspectStack.push_back(
       FunctionScopeInfo::InspectInfo(IE, false));
 
+  if (!IE->hasExplicitResultType())
+    return IE;
+
   TypeSourceInfo *TSI = nullptr;
   QualType RetTy = GetTypeFromParser(ReturnType.get(), &TSI);
   assert(TSI && "must be valid at this point");
@@ -9381,41 +9384,49 @@ ExprResult Sema::ActOnFinishInspectExpr(SourceLocation InspectLoc,
   if (!CondExpr)
     return ExprError();
 
-  /// There are multiple checks that need to be applied here:
-  ///
-  ///   (1) All patterns must agree on the return type. (WIP)
-  ///   (2) The common return type must match the trailing return
-  ///       type, or be the deduced one otherwise. (TODO)
-  ///   (3) Exaustiviness checking...
   const PatternStmt *P = IE->getPatternList();
 
   // FIXME: instead make all PatternStmt have a substmt as trailing object
-  auto getExprResultFromPattern = [](const PatternStmt *PS) -> const Stmt * {
+  auto getPatternExprType = [&](const PatternStmt *PS) -> QualType {
+    if (isa<CompoundStmt>(PS->getSubStmt()))
+      return Context.VoidTy;
     if (auto *S = dyn_cast<WildcardPatternStmt>(PS))
-      return S->getSubStmt();
-    else if (auto *S = dyn_cast<IdentifierPatternStmt>(PS))
-      return S->getSubStmt();
+      return cast<Expr>(S->getSubStmt())->getType();
+    if (auto *S = dyn_cast<IdentifierPatternStmt>(PS))
+      return cast<Expr>(S->getSubStmt())->getType();
     assert(0 && "Not supposed to get here");
-    return nullptr;
+    return QualType();
   };
 
-  QualType T = IE->getType();
+  assert(P && "inspect must have at least one pattern");
+  QualType ResTy =
+      (IE->hasExplicitResultType() ? IE->getType() : getPatternExprType(P))
+          .getUnqualifiedType();
+
+  // Check all patterns return the same type by comparing to either
+  // the trailing result type or resulting type found in first pattern's
+  // expression.
   for (; P != nullptr; P = P->getNextPattern()) {
-    const Expr *Res = cast<Expr>(getExprResultFromPattern(P));
+    // Handles error recovery when expression type does not match the
+    // trailing result type.
+    if (isa<NullStmt>(P->getSubStmt()))
+      continue;
 
-    if (T.isNull())
-      IE->setType(Res->getType());
+    // FIXME: Should we be looking into the unqualified type here?
+    QualType PatternResTy = getPatternExprType(P).getUnqualifiedType();
 
-    // FIXME: this looks like a rather bad type comparison? what about
-    // implicit conversions and all that stuff? Find the proper way to
-    // do this.
-    if (Res->getType() != T);
-      // emit warning/error
+    if (Context.getCanonicalType(ResTy) ==
+        Context.getCanonicalType(PatternResTy))
+      continue;
+
+    Diag(P->getSubStmt()->getBeginLoc(),
+         diag::err_typecheck_pattern_type_incompatible)
+        << PatternResTy << ResTy << IE->hasExplicitResultType();
   }
 
-  // FIXME: maybe have an assertion? what would be better for error recovery?
-  if (IE->getType().isNull())
-    return ExprError();
+  if (!IE->hasExplicitResultType())
+    IE->setType(ResTy);
 
+  // TODO: exaustiviness checking...
   return IE;
 }

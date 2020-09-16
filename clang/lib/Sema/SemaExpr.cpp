@@ -16739,10 +16739,18 @@ ExprResult Sema::ActOnStmtExprResult(ExprResult ER) {
   if (Cast && Cast->getCastKind() == CK_ARCConsumeObject)
     return Cast->getSubExpr();
 
+  QualType T = E->getType().getUnqualifiedType();
+  // If the inspect expr has a trailing return type it's possible
+  // to perform implicit conversion during the copy initialization.
+  if (getCurScope()->isPatternScope()) {
+    InspectExpr *IE = getCurFunction()->InspectStack.back().getPointer();
+    if (IE->hasExplicitResultType())
+      T = IE->getType();
+  }
+
   // FIXME: Provide a better location for the initialization.
   return PerformCopyInitialization(
-      InitializedEntity::InitializeStmtExprResult(
-          E->getBeginLoc(), E->getType().getUnqualifiedType()),
+      InitializedEntity::InitializeStmtExprResult(E->getBeginLoc(), T),
       SourceLocation(), E);
 }
 
