@@ -2210,6 +2210,44 @@ static const char *GetPatternName(const PatternStmt *S) {
   llvm_unreachable("unexpected pattern type");
 }
 
+void CodeGenFunction::EmitPatternStmtBody(const PatternStmt &S) {
+  // Emit code for the pattern body, which could be a compound statement or an
+  // expression statement.
+  const Expr *E = dyn_cast<Expr>(S.getSubStmt());
+  if (!E) {
+    EmitStmt(S.getSubStmt());
+    return;
+  }
+
+  // No result to store, but evaluate the expression for side effects.
+  if (E->getType()->isVoidType()) {
+    EmitAnyExpr(E);
+  } else if (FnRetTy->isReferenceType()) {
+    // If the expr is a reference, take the address of the expression
+    // rather than the value.
+    RValue Result = EmitReferenceBindingToExpr(E);
+    Builder.CreateStore(Result.getScalarVal(), InspectCtx.InspectResult);
+  } else {
+    switch (getEvaluationKind(E->getType())) {
+    case TEK_Scalar:
+      Builder.CreateStore(EmitScalarExpr(E), InspectCtx.InspectResult);
+      break;
+    case TEK_Complex:
+      EmitComplexExprIntoLValue(E, MakeAddrLValue(InspectCtx.InspectResult, E->getType()),
+                                /*isInit*/ true);
+      break;
+    case TEK_Aggregate:
+      EmitAggExpr(E,
+                  AggValueSlot::forAddr(InspectCtx.InspectResult, Qualifiers(),
+                                        AggValueSlot::IsDestructed,
+                                        AggValueSlot::DoesNotNeedGCBarriers,
+                                        AggValueSlot::IsNotAliased,
+                                        getOverlapForReturnValue()));
+      break;
+    }
+  }
+}
+
 void CodeGenFunction::EmitWildcardPatternStmt(const WildcardPatternStmt &S) {
   assert(InspectCtx.InspectExit && "Expected associated inspect statement");
 
@@ -2229,39 +2267,8 @@ void CodeGenFunction::EmitWildcardPatternStmt(const WildcardPatternStmt &S) {
     EmitBranchOnBoolExpr(S.getPatternGuard(), ThisPattern, NextPattern,
                          getProfileCount(S.getSubStmt()));
 
-  // Emit code for the pattern body, which could be a pure statement or a
-  // expression statement.
-  if (const Expr *E = dyn_cast<Expr>(S.getSubStmt())) {
-    // No result to store, but evaluate the expression for side effects.
-    if (E->getType()->isVoidType()) {
-      EmitAnyExpr(E);
-    } else if (FnRetTy->isReferenceType()) {
-      // If the expr is a reference, take the address of the expression
-      // rather than the value.
-      RValue Result = EmitReferenceBindingToExpr(E);
-      Builder.CreateStore(Result.getScalarVal(), InspectCtx.InspectResult);
-    } else {
-      switch (getEvaluationKind(E->getType())) {
-      case TEK_Scalar:
-        Builder.CreateStore(EmitScalarExpr(E), InspectCtx.InspectResult);
-        break;
-      case TEK_Complex:
-        EmitComplexExprIntoLValue(E, MakeAddrLValue(InspectCtx.InspectResult, E->getType()),
-                                  /*isInit*/ true);
-        break;
-      case TEK_Aggregate:
-        EmitAggExpr(E, AggValueSlot::forAddr(
-                            InspectCtx.InspectResult, Qualifiers(),
-                            AggValueSlot::IsDestructed,
-                            AggValueSlot::DoesNotNeedGCBarriers,
-                            AggValueSlot::IsNotAliased,
-                            getOverlapForReturnValue()));
-        break;
-      }
-    }
-  } else {
-    EmitStmt(S.getSubStmt());
-  }
+  // Emit the pattern body
+  EmitPatternStmtBody(S);
 
   // Banch to the next block after inspect.
   EmitBranch(InspectCtx.InspectExit);
@@ -2288,7 +2295,11 @@ void CodeGenFunction::EmitIdentifierPatternStmt(
   // Emit code for the statement following the pattern and branch to the
   // next block after inspect.
   EmitStmt(S.getVar());
-  EmitStmt(S.getSubStmt());
+
+  // Emit the pattern body
+  EmitPatternStmtBody(S);
+
+  // Banch to the next block after inspect.
   EmitBranch(InspectCtx.InspectExit);
 }
 
