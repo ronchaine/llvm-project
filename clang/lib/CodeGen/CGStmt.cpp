@@ -2210,12 +2210,15 @@ static const char *GetPatternName(const PatternStmt *S) {
   llvm_unreachable("unexpected pattern type");
 }
 
+// Emit code for a pattern body and a branch to inspect's exit block.
 void CodeGenFunction::EmitPatternStmtBody(const PatternStmt &S) {
   // Emit code for the pattern body, which could be a compound statement or an
   // expression statement.
   const Expr *E = dyn_cast<Expr>(S.getSubStmt());
   if (!E) {
     EmitStmt(S.getSubStmt());
+    // Banch to the next block after inspect.
+    EmitBranch(InspectCtx.InspectExit);
     return;
   }
 
@@ -2246,6 +2249,9 @@ void CodeGenFunction::EmitPatternStmtBody(const PatternStmt &S) {
       break;
     }
   }
+
+  // Banch to the next block after inspect.
+  EmitBranch(InspectCtx.InspectExit);
 }
 
 void CodeGenFunction::EmitWildcardPatternStmt(const WildcardPatternStmt &S) {
@@ -2263,15 +2269,17 @@ void CodeGenFunction::EmitWildcardPatternStmt(const WildcardPatternStmt &S) {
   EmitBlock(ThisPattern);
 
   // Do the proper handling in the presence of a pattern guard.
-  if (S.hasPatternGuard())
-    EmitBranchOnBoolExpr(S.getPatternGuard(), ThisPattern, NextPattern,
+  if (S.hasPatternGuard()) {
+    // Do not bother creating a specific BB for the pattern body if
+    // there's no extra condition to branch on.
+    llvm::BasicBlock *PatBodyBB = createBasicBlock("patbody");
+    EmitBranchOnBoolExpr(S.getPatternGuard(), PatBodyBB, NextPattern,
                          getProfileCount(S.getSubStmt()));
+    EmitBlock(PatBodyBB);
+  }
 
   // Emit the pattern body
   EmitPatternStmtBody(S);
-
-  // Banch to the next block after inspect.
-  EmitBranch(InspectCtx.InspectExit);
 }
 
 void CodeGenFunction::EmitIdentifierPatternStmt(
@@ -2288,9 +2296,14 @@ void CodeGenFunction::EmitIdentifierPatternStmt(
   EmitBlock(ThisPattern);
 
   // Do the proper handling in the presence of a pattern guard.
-  if (S.hasPatternGuard())
-    EmitBranchOnBoolExpr(S.getPatternGuard(), ThisPattern, NextPattern,
+  if (S.hasPatternGuard()) {
+    // Do not bother creating a specific BB for the pattern body if
+    // there's no extra condition to branch on.
+    llvm::BasicBlock *PatBodyBB = createBasicBlock("patbody");
+    EmitBranchOnBoolExpr(S.getPatternGuard(), PatBodyBB, NextPattern,
                          getProfileCount(S.getSubStmt()));
+    EmitBlock(PatBodyBB);
+  }
 
   // Emit code for the statement following the pattern and branch to the
   // next block after inspect.
