@@ -293,6 +293,11 @@ Retry:
       return StmtError();
     }
 
+    auto *S = getCurScope();
+    if (S && S->isInspectScope() && !S->isPatternScope())
+      return ParseExpressionPattern(StmtCtx);
+
+
     switch (Tok.getKind()) {
 #define TRANSFORM_TYPE_TRAIT_DEF(_, Trait) case tok::kw___##Trait:
 #include "clang/Basic/TransformTypeTraits.def"
@@ -866,13 +871,13 @@ StmtResult Parser::ParsePatternStatement(InspectExpr *Inspect,
   //  return ParseIdentifierPattern(Inspect, StmtCtx);
   //}
   //else {
-    ExprResult Expr(ParseExpression());
-
-  if ((Tok.is(tok::equalarrow) || (Tok.is(tok::kw_if))) &&
-      getCurScope()->isInspectScope()) {
-    // Recover parsing as an expression pattern.
-    return ParseExpressionPattern(Inspect, StmtCtx, Expr.get());
-  }
+  //  ExprResult Expr(ParseExpression());
+  //
+  //  if ((Tok.is(tok::equalarrow) || (Tok.is(tok::kw_if))) &&
+  //    getCurScope()->isInspectScope()) {
+  //  // Recover parsing as an expression pattern.
+  //  return ParseExpressionPattern(Inspect, StmtCtx, Expr.get());
+  //}
   //}
   return StmtError();
 }
@@ -1012,38 +1017,56 @@ StmtResult Parser::ParseIdentifierPattern(ParsedStmtContext StmtCtx) {
   return IPS;
 }
 
-StmtResult Parser::ParseExpressionPattern(InspectExpr *Inspect,
-                                          ParsedStmtContext StmtCtx,
-                                          Expr *ConstantExpr) {
-
-  SourceLocation ExpressionLoc = Tok.getLocation();
-
-  ExprResult Condition = Actions.ActOnBinOp(getCurScope(), ExpressionLoc,
-    tok::TokenKind::equalequal, ConstantExpr, Inspect->getCond());
-
-  // there may be a pattern guard here
-  ExprResult PatternGuard;
-  if (Tok.is(tok::kw_if)) {
-    ConsumeToken();
-    PatternGuard = ParseExpression();
+StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx) {
+  assert(getCurScope()->isInspectScope() &&
+         "Expression pattern should be in inspect scope");
+  // Start by parsing the constant-expression
+  //
+  //   constant-expression pattern-guard[opt] '=>' statement
+  //   ^
+  SourceLocation ConstExprLoc = Tok.getLocation();
+  ExprResult CstExpr = ParseConstantExpression();
+  if (CstExpr.isInvalid()) {
+    Diag(Tok, diag::err_expected_constantexpr);
+    SkipUntil(tok::semi);
+    return StmtError();
   }
 
-  // constant-expression '=>' statement
-  //                     ^
-  assert(Tok.is(tok::equalarrow) && "Not an identifier pattern!");
+
+  // Handle pattern-guard[opt]
+  Sema::ConditionResult Cond;
+  SourceLocation IfLoc;
+
+  ParseScope PatternScope(this, Scope::PatternScope);
+
+  // FIXME: retrieve constexpr information from InspectExpr
+  if (Tok.is(tok::kw_if))
+    if (!ParsePatternGuard(Cond, IfLoc, false /*IsConstexprIf*/))
+      return StmtError();
+
+  if (!Tok.is(tok::equalarrow)) {
+    Diag(Tok, diag::err_expected_equalarrow_after)
+        << (IfLoc.isInvalid() ? ConstExprLoc : IfLoc);
+    SkipUntil(tok::semi);
+    return StmtError();
+  }
   SourceLocation ColonLoc = ConsumeToken();
 
-  // constant-expression '=>' statement
-  //                          ^
+  // Parse the statement
+  //
+  // constant-expression pattern-guard[opt] '=>' expression
+  //                                             { ... } (implies void)
+  //                                             ^
   StmtResult SubStmt = ParseStatement(nullptr, StmtCtx);
 
-  // Broken substmt shouldn't prevent the identifier from being added to the
-  // AST.
   if (SubStmt.isInvalid())
     SubStmt = Actions.ActOnNullStmt(ColonLoc);
 
-  return Actions.ActOnExpressionPattern(ExpressionLoc, ColonLoc, Condition.get(), 
-                                        SubStmt.get(), PatternGuard.get());
+  auto EPS = Actions.ActOnExpressionPattern(
+      ConstExprLoc, ColonLoc, CstExpr.get(), SubStmt.get(), Cond.get().second);
+
+  PatternScope.Exit();
+  return EPS;
 }
 
 StmtResult Parser::ParseStructuredBindingPattern(InspectExpr *Inspect,

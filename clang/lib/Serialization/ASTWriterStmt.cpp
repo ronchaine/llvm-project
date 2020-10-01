@@ -305,7 +305,7 @@ void ASTStmtWriter::VisitIdentifierPatternStmt(IdentifierPatternStmt *S) {
 
 void ASTStmtWriter::VisitExpressionPatternStmt(ExpressionPatternStmt *S) {
   VisitPatternStmt(S);
-  Record.AddStmt(S->getCond());
+  Record.AddStmt(S->getMatchCond());
   Record.AddStmt(S->getSubStmt());
   Code = serialization::STMT_EXPRESSIONPATTERN;
 }

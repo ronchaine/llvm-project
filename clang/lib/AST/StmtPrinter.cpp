@@ -400,7 +400,7 @@ void StmtPrinter::VisitIdentifierPatternStmt(IdentifierPatternStmt *Node) {
 
 void StmtPrinter::VisitExpressionPatternStmt(ExpressionPatternStmt *Node) {
   Indent();
-  PrintExpr(Node->getCond());
+  PrintExpr(cast<Expr>(Node->getMatchCond()));
   if (Node->getPatternGuard()) {
     PrintExpr(Node->getPatternGuard());
   }

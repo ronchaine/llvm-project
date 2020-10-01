@@ -37,5 +37,15 @@ void TestInspect(int a, int b) {
   // CHECK-NEXT: DeclRefExpr 0x{{[^ ]*}} <col:10> 'int':'int' lvalue Var 0x{{[^ ]*}} 'y' 'int &'
   // CHECK-NEXT: DeclStmt 0x{{[^ ]*}} <col:7>
   // CHECK-NEXT: VarDecl 0x{{.*}} used y 'int &' auto cinit
+
+  int v = inspect(x) -> int {
+    7 => 4;
+  };
+  // CHECK: ExpressionPatternStmt {{.*}} <line:[[@LINE-2]]:5, col:10>
+  // CHECK-NEXT: IntegerLiteral {{.*}} <col:10> 'int' 4
+  // CHECK-NEXT: BinaryOperator {{.*}} <col:5, line:[[@LINE-5]]:19> 'bool' '=='
+  // CHECK-NEXT: IntegerLiteral {{.*}} <line:[[@LINE-5]]:5> 'int' 7
+  // CHECK-NEXT: ImplicitCastExpr {{.*}} <line:[[@LINE-7]]:19> 'int' <LValueToRValue>
+  // CHECK-NEXT: DeclRefExpr {{.*}} <col:19> 'int' lvalue Var {{.*}} 'x' 'int'
 }
 

@@ -2136,8 +2136,10 @@ private:
                          bool IsConstexprIf);
   StmtResult ParseWildcardPattern(ParsedStmtContext StmtCtx);
   StmtResult ParseIdentifierPattern(ParsedStmtContext StmtCtx);
-  StmtResult ParseExpressionPattern(InspectExpr *Inspect,
-                                    ParsedStmtContext StmtCtx, Expr *Condition);
+  // StmtResult ParseExpressionPattern(InspectExpr *Inspect,
+  //                                  ParsedStmtContext StmtCtx, Expr
+  //                                  *Condition);
+  StmtResult ParseExpressionPattern(ParsedStmtContext StmtCtx);
   StmtResult ParseStructuredBindingPattern(InspectExpr *Inspect,
                                            ParsedStmtContext StmtCtx);
   StmtResult ParseTypedPattern(InspectExpr *Inspect, ParsedStmtContext StmtCtx);

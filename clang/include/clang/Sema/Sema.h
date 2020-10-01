@@ -8818,8 +8818,8 @@ public:
   StmtResult ActOnIdentifierPattern(SourceLocation IdentifierLoc,
                                     SourceLocation ColonLoc, IdentifierInfo *II,
                                     Stmt *SubStmt, Expr *PatternGuard);
-  StmtResult ActOnExpressionPattern(SourceLocation ExpressionLoc,
-                                    SourceLocation ColonLoc, Expr *Condition,
+  StmtResult ActOnExpressionPattern(SourceLocation CstExprLoc,
+                                    SourceLocation ColonLoc, Expr *CstExpr,
                                     Stmt *SubStmt, Expr *PatternGuard);
 
   /// DiagnoseAssignmentEnum - Warn if assignment to enum is a constant

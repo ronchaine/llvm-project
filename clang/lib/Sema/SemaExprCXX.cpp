@@ -9398,6 +9398,8 @@ ExprResult Sema::ActOnFinishInspectExpr(SourceLocation InspectLoc,
       return cast<Expr>(S->getSubStmt())->getType();
     if (auto *S = dyn_cast<IdentifierPatternStmt>(PS))
       return cast<Expr>(S->getSubStmt())->getType();
+    if (auto *S = dyn_cast<ExpressionPatternStmt>(PS))
+      return cast<Expr>(S->getSubStmt())->getType();
     assert(0 && "Not supposed to get here");
     return QualType();
   };

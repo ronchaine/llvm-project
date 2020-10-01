@@ -177,8 +177,8 @@ ExpressionPatternStmt *ExpressionPatternStmt::Create(const ASTContext &Ctx,
   bool HasPatternGuard = PatternGuard != nullptr;
 
   void *Mem = Ctx.Allocate(
-      totalSizeToAlloc<Stmt *, Expr *>(NumMandatoryStmtPtr, HasPatternGuard),
-      alignof(ExpressionPatternStmt));
+      totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr + HasPatternGuard),
+      alignof(IdentifierPatternStmt));
   return new (Mem)
       ExpressionPatternStmt(CaseLoc, ColonLoc, nullptr, nullptr, PatternGuard);
 }
@@ -187,7 +187,7 @@ ExpressionPatternStmt *
 ExpressionPatternStmt::CreateEmpty(const ASTContext &Ctx,
                                    bool HasPatternGuard) {
   void *Mem = Ctx.Allocate(
-      totalSizeToAlloc<Stmt *, Expr *>(NumMandatoryStmtPtr, HasPatternGuard),
-      alignof(ExpressionPatternStmt));
+      totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr + HasPatternGuard),
+      alignof(IdentifierPatternStmt));
   return new (Mem) ExpressionPatternStmt(EmptyShell(), HasPatternGuard);
 }

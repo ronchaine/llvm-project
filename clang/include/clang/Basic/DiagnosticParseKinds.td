@@ -259,6 +259,7 @@ def err_expected_lbrace_in_compound_literal : Error<
 def err_expected_while : Error<"expected 'while' in do/while loop">;
 
 def err_expected_equalarrow_after : Error<"expected '=>' after %0">;
+def err_expected_constantexpr : Error<"expected constant-expression">;
 
 def err_expected_semi_after_stmt : Error<"expected ';' after %0 statement">;
 def err_expected_semi_after_expr : Error<"expected ';' after expression">;

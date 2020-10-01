@@ -2311,13 +2311,38 @@ void CodeGenFunction::EmitIdentifierPatternStmt(
 
   // Emit the pattern body
   EmitPatternStmtBody(S);
-
-  // Banch to the next block after inspect.
-  EmitBranch(InspectCtx.InspectExit);
 }
 
-void CodeGenFunction::EmitExpressionPatternStmt(const ExpressionPatternStmt &S) {
-  assert(0 && "not implemented");
+void CodeGenFunction::EmitExpressionPatternStmt(
+    const ExpressionPatternStmt &S) {
+  // Unless this is the last pattern in the inspect statement, create a new
+  // basic block placeholder for the next pattern to be able to point to it.
+  auto *ThisPattern = InspectCtx.NextPattern;
+  auto *NextPattern = S.getNextPattern()
+                          ? createBasicBlock(GetPatternName(S.getNextPattern()))
+                          : InspectCtx.InspectExit;
+  auto *PatBodyBB = createBasicBlock("patbody");
+  auto *MatchCondNextBB =
+      S.hasPatternGuard() ? createBasicBlock("patguard") : PatBodyBB;
+  InspectCtx.NextPattern = NextPattern;
+
+  // Emit code for the current pattern test.
+  EmitBlock(ThisPattern);
+
+  // Emit code to handle the condition for the matching expression.
+  EmitBranchOnBoolExpr(cast<Expr>(S.getMatchCond()), MatchCondNextBB,
+                       NextPattern, getProfileCount(S.getMatchCond()));
+
+  // Do the proper handling in the presence of a pattern guard.
+  if (S.hasPatternGuard()) {
+    EmitBlock(MatchCondNextBB);
+    EmitBranchOnBoolExpr(S.getPatternGuard(), PatBodyBB, NextPattern,
+                         getProfileCount(S.getSubStmt()));
+  }
+  EmitBlock(PatBodyBB);
+
+  // Emit the pattern body
+  EmitPatternStmtBody(S);
 }
 
 static std::string

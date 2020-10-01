@@ -7007,14 +7007,14 @@ ASTNodeImporter::VisitExpressionPatternStmt(ExpressionPatternStmt *S) {
   auto ToSubStmt = importChecked(Err, S->getSubStmt());
   auto ToPatternLoc = importChecked(Err, S->getPatternLoc());
   auto ToColonLoc = importChecked(Err, S->getColonLoc());
-  auto ToCond = importChecked(Err, S->getCond());
+  auto ToCond = importChecked(Err, S->getMatchCond());
   auto ToPatternGuard = importChecked(Err, S->getPatternGuard());
   if (Err)
     return std::move(Err);
 
   auto *ToStmt = ExpressionPatternStmt::Create(
       Importer.getToContext(), ToPatternLoc, ToColonLoc, ToPatternGuard);
-  ToStmt->setCond(ToCond);
+  ToStmt->setMatchCond(ToCond);
   ToStmt->setSubStmt(ToSubStmt);
 
   return ToStmt;

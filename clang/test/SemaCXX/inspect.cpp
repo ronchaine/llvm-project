@@ -44,15 +44,15 @@ void f(int x) {
 
 void g(int x) {
   inspect(x) -> void {
-    __ => (void)3;
-    __ =>;
+    1 => (void)3;
+    2 =>;
     __ => { bar(); };
   };
 }
 
 void h(int x) {
   inspect(x) {
-    __ =>;
+    0 =>;
     __ => (void)3;
   };
 }

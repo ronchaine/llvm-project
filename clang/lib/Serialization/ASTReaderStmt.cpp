@@ -327,7 +327,7 @@ void ASTStmtReader::VisitIdentifierPatternStmt(IdentifierPatternStmt *S) {
 
 void ASTStmtReader::VisitExpressionPatternStmt(ExpressionPatternStmt *S) {
   VisitPatternStmt(S);
-  S->setCond(cast<Expr>(Record.readSubStmt()));
+  S->setMatchCond(cast<Expr>(Record.readSubStmt()));
   S->setSubStmt(Record.readSubStmt());
 }
 
