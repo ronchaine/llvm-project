@@ -56,3 +56,11 @@ void h(int x) {
     __ => (void)3;
   };
 }
+
+int i() {
+  int x = 3;
+  int y = 4;
+  inspect (y) {
+    x => {} // x is defined within pattern scope, inspect should return 4.
+  };
+}

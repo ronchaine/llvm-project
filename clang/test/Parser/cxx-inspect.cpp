@@ -45,7 +45,8 @@ void trailingReturnTypes() {
   };
 }
 
-int idPattern() {
+// Identifier pattern parsing
+int id_pat0() {
   int x = 3;
   return inspect(x) {
     y => y++;
