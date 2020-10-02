@@ -1,4 +1,4 @@
-// RUN: %clang_cc1 -fsyntax-only -verify -fpattern-matching -Wno-unused-value %s
+// RUN: %clang_cc1 -fsyntax-only -verify -fpattern-matching -Wno-unused-value -Wno-string-compare %s
 
 void noParen() {
   inspect 42 { // expected-error {{expected '(' after 'inspect'}}
@@ -51,5 +51,32 @@ int id_pat0() {
   return inspect(x) {
     y => y++;
     __ => 3;
+  };
+}
+
+// Expression pattern parsing
+int exp_pat0(int x) {
+ return inspect (x) {
+    1 => 0;
+    2 => 1;
+    __ => 42;
+ };
+}
+
+void exp_pat1(const char *s) {
+ inspect (s) {
+    "foo" => {}
+    "bar" => {}
+    __ => {}
+ };
+}
+
+enum class Color { Red, Green, Blue };
+
+void exp_pat2(Color color) {
+  inspect (color) {
+    Color::Red => {}
+    Color::Green => {}
+    Color::Blue => {}
   };
 }

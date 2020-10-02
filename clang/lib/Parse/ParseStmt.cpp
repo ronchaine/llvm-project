@@ -175,23 +175,12 @@ StmtResult Parser::ParseStatementOrDeclarationAfterAttributes(
   StmtResult Res;
   SourceLocation GNUAttributeLoc;
 
-  auto IsWildcardPattern = [](IdentifierInfo *II, Scope *S) {
-    if (!II || !S)
+  auto IsMaybeInspectPattern = [](Scope *S) {
+    // Successfully parsing a pattern requires being in a inspect
+    // scope but not inside another pattern.
+    if (!S || !S->isInspectScope() || S->isPatternScope())
       return false;
-
-    // Alternatively, we could make wildcard a pattern matching
-    // keyword in TokenKinds.td: PATMAT_KEYWORD(__) and then
-    // use revertTokenIDToIdentifier to get back a tok::identifier.
-    // The down side is that it involves teaching all places that
-    // take an identifier to also handle the wildcard, as to apply
-    // the revert when necessary.
-    if (II->getName() != "__")
-      return false;
-
-    if (S->isInspectScope())
-      return true;
-
-    return false;
+    return true;
   };
 
   // Cases in this switch statement should fall through if the parser expects
@@ -215,13 +204,25 @@ Retry:
   case tok::identifier:
   ParseIdentifier: {
     // C++ P2688 / pattern matching: wildcard inspect pattern.
-    if (getLangOpts().PatternMatching) {
-      auto *II = Tok.getIdentifierInfo();
-      auto *S = getCurScope();
-      if (IsWildcardPattern(II, getCurScope()))
+    if (II && getLangOpts().PatternMatching &&
+        IsMaybeInspectPattern(getCurScope())) {
+      // Alternatively, we could make wildcard a pattern matching
+      // keyword in TokenKinds.td: PATMAT_KEYWORD(__) and then
+      // use revertTokenIDToIdentifier to get back a tok::identifier.
+      // The down side is that it involves teaching all places that
+      // take an identifier to also handle the wildcard, as to apply
+      // the revert when necessary.
+      if (II->getName() == "__")
         return ParseWildcardPattern(StmtCtx);
-      if (II && S && S->isInspectScope() && !S->isPatternScope())
+      // This mostly prevents us from considering any qualified names
+      // for identifier patterns.
+      if (NextToken().is(tok::equalarrow) || NextToken().is(tok::kw_if))
         return ParseIdentifierPattern(StmtCtx);
+      // Otherwise try parsing as an expression pattern. This
+      // should handle constant-expressions with qualified names
+      // (e.g enumerations) without the need for a tok::case to
+      // disambiguate.
+      return ParseExpressionPattern(StmtCtx);
     }
 
     Token Next = NextToken();
