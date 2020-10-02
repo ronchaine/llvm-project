@@ -835,54 +835,6 @@ StmtResult Parser::ParseLabeledStatement(ParsedAttributes &Attrs,
                                 SubStmt.get());
 }
 
-/// ParsePatternStatement - We have an pattern and a ':' after it.
-///
-///       pattern-statement:
-///         __ '=>' statement
-///         identifier '=>' statement
-///         constant-expression '=>' statement
-///
-StmtResult Parser::ParsePatternStatement(InspectExpr *Inspect,
-                                         ParsedAttributesWithRange &attrs,
-                                         ParsedStmtContext StmtCtx) {
-  if (Tok.is(tok::l_square)) {
-    return ParseStructuredBindingPattern(Inspect, StmtCtx);
-  }
-  else if (Tok.is(tok::less)) {
-    return ParseTypedPattern(Inspect, StmtCtx);
-  }
-  else if (Tok.is(tok::l_paren)) {
-    return ParseParenthesisedPattern(Inspect, StmtCtx);
-  }
-  else if (Tok.is(tok::kw_let)) {
-    return ParseBindingPattern(Inspect, StmtCtx);
-  }
-  else if (Tok.is(tok::kw_case)) {
-    return ParseCasePattern(Inspect, StmtCtx);
-  }
-
-  //if (Tok.is(tok::identifier)) {
-  //  // yuck, is there a better way to tell '__'
-  //  // from other valid identifiers in this context?
-  //  IdentifierInfo* II = Tok.getIdentifierInfo();
-  //  if (!II->getName().compare("__")) {
-  //    return ParseWildcardPattern(Inspect, StmtCtx);
-  //  }
-
-  //  return ParseIdentifierPattern(Inspect, StmtCtx);
-  //}
-  //else {
-  //  ExprResult Expr(ParseExpression());
-  //
-  //  if ((Tok.is(tok::equalarrow) || (Tok.is(tok::kw_if))) &&
-  //    getCurScope()->isInspectScope()) {
-  //  // Recover parsing as an expression pattern.
-  //  return ParseExpressionPattern(Inspect, StmtCtx, Expr.get());
-  //}
-  //}
-  return StmtError();
-}
-
 /// ParsePatternGuard - a 'if' followed by a condition, no body.
 ///
 ///       pattern-guard:
@@ -1068,36 +1020,6 @@ StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx) {
 
   PatternScope.Exit();
   return EPS;
-}
-
-StmtResult Parser::ParseStructuredBindingPattern(InspectExpr *Inspect,
-                                                 ParsedStmtContext StmtCtx) {
-  assert((Tok.is(tok::l_square)) && "Not a structured binding pattern!");
-  return StmtError();
-}
-
-StmtResult Parser::ParseTypedPattern(InspectExpr *Inspect,
-                                     ParsedStmtContext StmtCtx) {
-  assert((Tok.is(tok::less)) && "Not a typed pattern!");
-  return StmtError();
-}
-
-StmtResult Parser::ParseParenthesisedPattern(InspectExpr *Inspect,
-                                             ParsedStmtContext StmtCtx) {
-  assert((Tok.is(tok::l_paren)) && "Not a parenthsised pattern!");
-  return StmtError();
-}
-
-StmtResult Parser::ParseCasePattern(InspectExpr *Inspect,
-                                    ParsedStmtContext StmtCtx) {
-  assert((Tok.is(tok::kw_case)) && "Not a case pattern!");
-  return StmtError();
-}
-
-StmtResult Parser::ParseBindingPattern(InspectExpr *Inspect,
-                                       ParsedStmtContext StmtCtx) {
-  assert((Tok.is(tok::kw_let)) && "Not a binding pattern!");
-  return StmtError();
 }
 
 /// ParseCaseStatement
