@@ -1225,6 +1225,11 @@ protected:
     /// patterns)
     unsigned HasCase : 1;
 
+    /// Used by PatternStmt to discover whether a
+    /// pattern statement contributes to return type deduction
+    /// for the overall inspect expression
+    unsigned PatternStmtExcludedFromTypeDeduction : 1;
+
     /// The location of the '__' wildcard, identifier or
     /// constant expression.
     SourceLocation PatternLoc;
@@ -4020,14 +4025,19 @@ protected:
   /// The location of the ":".
   SourceLocation ColonLoc;
 
+  /// The location of the "!" (type deduction exclusion marker) if present
+  SourceLocation ExclaimLoc;
+
   /// A pointer to the following PatternStmt class in the same
   /// inspect statement.
   PatternStmt *NextPattern = nullptr;
 
-  PatternStmt(StmtClass SC, SourceLocation KWLoc, SourceLocation ColonLoc)
+  PatternStmt(StmtClass SC, SourceLocation KWLoc, SourceLocation ColonLoc,
+              SourceLocation ExclaimLoc)
       : Stmt(SC), ColonLoc(ColonLoc) {
     setPatternLoc(KWLoc);
     setHasCase(false);
+    setExclaimLoc(ExclaimLoc);
   }
 
   PatternStmt(StmtClass SC, EmptyShell) : Stmt(SC) {}
@@ -4057,6 +4067,15 @@ public:
 
   inline void setHasCase(bool HasCase) { InspectPatternBits.HasCase = HasCase; }
   inline bool hasCase() const { return InspectPatternBits.HasCase; }
+
+  SourceLocation getExclaimLoc() const { return ExclaimLoc; }
+  void setExclaimLoc(SourceLocation L) {
+    ExclaimLoc = L;
+    InspectPatternBits.PatternStmtExcludedFromTypeDeduction = L.isValid();
+  }
+  inline bool excludedFromTypeDeduction() const {
+    return InspectPatternBits.PatternStmtExcludedFromTypeDeduction;
+  }
 
   SourceLocation getBeginLoc() const { return getPatternLoc(); }
   inline SourceLocation getEndLoc() const LLVM_READONLY;
@@ -4093,8 +4112,9 @@ class WildcardPatternStmt final
 
 public:
   WildcardPatternStmt(SourceLocation PatternLoc, SourceLocation ColonLoc,
-                      Stmt *SubStmt, Expr *Guard)
-      : PatternStmt(WildcardPatternStmtClass, PatternLoc, ColonLoc) {
+                      Stmt *SubStmt, Expr *Guard, SourceLocation ExclaimLoc)
+      : PatternStmt(WildcardPatternStmtClass, PatternLoc, ColonLoc,
+                    ExclaimLoc) {
     setSubStmt(SubStmt);
     if (Guard) {
       InspectPatternBits.PatternStmtHasPatternGuard = true;
@@ -4112,7 +4132,8 @@ public:
   static WildcardPatternStmt *Create(const ASTContext &Ctx,
                                      SourceLocation PatternLoc,
                                      SourceLocation ColonLoc,
-                                     Expr *patternGuard);
+                                     Expr *patternGuard,
+                                     SourceLocation ExclaimLoc);
 
   /// Build an empty wildcard pattern statement.
   static WildcardPatternStmt *CreateEmpty(const ASTContext &Ctx,
@@ -4212,8 +4233,10 @@ class IdentifierPatternStmt final
 
 public:
   IdentifierPatternStmt(SourceLocation PatternLoc, SourceLocation ColonLoc,
-                        Stmt *VD, Stmt *SubStmt, Expr *Guard)
-      : PatternStmt(IdentifierPatternStmtClass, PatternLoc, ColonLoc) {
+                        Stmt *VD, Stmt *SubStmt, Expr *Guard,
+                        SourceLocation ExclaimLoc)
+      : PatternStmt(IdentifierPatternStmtClass, PatternLoc, ColonLoc,
+                    ExclaimLoc) {
     setSubStmt(SubStmt);
     setVar(VD);
 
@@ -4233,7 +4256,8 @@ public:
   static IdentifierPatternStmt *Create(const ASTContext &Ctx,
                                        SourceLocation PatternLoc,
                                        SourceLocation ColonLoc,
-                                       Expr *patternGuard);
+                                       Expr *patternGuard,
+                                       SourceLocation ExclaimLoc);
 
   /// Build an empty identifier pattern statement.
   static IdentifierPatternStmt *CreateEmpty(const ASTContext &Ctx,
@@ -4342,8 +4366,10 @@ class ExpressionPatternStmt final
 
 public:
   ExpressionPatternStmt(SourceLocation PatternLoc, SourceLocation ColonLoc,
-                        Stmt *MatchCond, Stmt *SubStmt, Expr *Guard)
-      : PatternStmt(ExpressionPatternStmtClass, PatternLoc, ColonLoc) {
+                        Stmt *MatchCond, Stmt *SubStmt, Expr *Guard,
+                        SourceLocation ExclaimLoc)
+      : PatternStmt(ExpressionPatternStmtClass, PatternLoc, ColonLoc,
+                    ExclaimLoc) {
     setSubStmt(SubStmt);
     setMatchCond(MatchCond);
 
@@ -4363,7 +4389,8 @@ public:
   static ExpressionPatternStmt *Create(const ASTContext &Ctx,
                                        SourceLocation PatternLoc,
                                        SourceLocation ColonLoc,
-                                       Expr *patternGuard);
+                                       Expr *patternGuard,
+                                       SourceLocation ExclaimLoc);
 
   /// Build an empty expression pattern statement.
   static ExpressionPatternStmt *CreateEmpty(const ASTContext &Ctx,

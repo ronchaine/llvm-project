@@ -6972,11 +6972,13 @@ ExpectedStmt ASTNodeImporter::VisitWildcardPatternStmt(WildcardPatternStmt *S) {
   auto ToPatternLoc = importChecked(Err, S->getPatternLoc());
   auto ToColonLoc = importChecked(Err, S->getColonLoc());
   auto ToPatternGuard = importChecked(Err, S->getPatternGuard());
+  auto ToExclaimLoc = importChecked(Err, S->getExclaimLoc());
   if (Err)
     return std::move(Err);
 
-  auto *ToStmt = WildcardPatternStmt::Create(
-      Importer.getToContext(), ToPatternLoc, ToColonLoc, ToPatternGuard);
+  auto *ToStmt =
+      WildcardPatternStmt::Create(Importer.getToContext(), ToPatternLoc,
+                                  ToColonLoc, ToPatternGuard, ToExclaimLoc);
   ToStmt->setSubStmt(ToSubStmt);
 
   return ToStmt;
@@ -6990,11 +6992,13 @@ ASTNodeImporter::VisitIdentifierPatternStmt(IdentifierPatternStmt *S) {
   auto ToColonLoc = importChecked(Err, S->getColonLoc());
   auto ToVar = importChecked(Err, S->getVar());
   auto ToPatternGuard = importChecked(Err, S->getPatternGuard());
+  auto ToExclaimLoc = importChecked(Err, S->getExclaimLoc());
   if (Err)
     return std::move(Err);
 
-  auto *ToStmt = IdentifierPatternStmt::Create(
-      Importer.getToContext(), ToPatternLoc, ToColonLoc, ToPatternGuard);
+  auto *ToStmt =
+      IdentifierPatternStmt::Create(Importer.getToContext(), ToPatternLoc,
+                                    ToColonLoc, ToPatternGuard, ToExclaimLoc);
   ToStmt->setVar(ToVar);
   ToStmt->setSubStmt(ToSubStmt);
 
@@ -7009,11 +7013,13 @@ ASTNodeImporter::VisitExpressionPatternStmt(ExpressionPatternStmt *S) {
   auto ToColonLoc = importChecked(Err, S->getColonLoc());
   auto ToCond = importChecked(Err, S->getMatchCond());
   auto ToPatternGuard = importChecked(Err, S->getPatternGuard());
+  auto ToExclaimLoc = importChecked(Err, S->getExclaimLoc());
   if (Err)
     return std::move(Err);
 
-  auto *ToStmt = ExpressionPatternStmt::Create(
-      Importer.getToContext(), ToPatternLoc, ToColonLoc, ToPatternGuard);
+  auto *ToStmt =
+      ExpressionPatternStmt::Create(Importer.getToContext(), ToPatternLoc,
+                                    ToColonLoc, ToPatternGuard, ToExclaimLoc);
   ToStmt->setMatchCond(ToCond);
   ToStmt->setSubStmt(ToSubStmt);
 
