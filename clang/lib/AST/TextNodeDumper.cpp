@@ -1112,7 +1112,10 @@ void TextNodeDumper::VisitIdentifierPatternStmt(
 }
 
 void TextNodeDumper::VisitExpressionPatternStmt(
-    const ExpressionPatternStmt *Node) {}
+    const ExpressionPatternStmt *Node) {
+  if (Node->hasCase())
+    OS << " has_case";
+}
 
 void TextNodeDumper::VisitWhileStmt(const WhileStmt *Node) {
   if (Node->hasVarStorage())

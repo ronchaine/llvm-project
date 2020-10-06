@@ -86,3 +86,45 @@ void exp_pat2(Color color) {
     Color::Blue => {}
   };
 }
+
+void exp_pat3(int x) {
+  inspect (x) {
+    SomeEnum::Red => {} // expected-error {{use of undeclared identifier 'SomeEnum'}}
+                        // expected-error@-1 {{expected constant-expression}}
+    case RED => {} // expected-error {{use of undeclared identifier 'RED'}}
+                   // expected-error@-1 {{expected constant-expression}}
+  };
+}
+
+void exp_case0(Color color) {
+  inspect (color) {
+    case Color::Red => {}
+    case Color::Green => {}
+    case Color::Blue => {}
+  };
+}
+
+enum Color2 { Red, Green, Blue };
+void exp_case1(Color2 c) {
+  inspect (c) {
+    case Red => {}
+    case Green => {}
+    case Blue => {}
+  };
+}
+
+int exp_case2(int x) {
+  int y;
+  y = inspect(x) -> int {
+    case 0 => 1;
+    case 1 => 2;
+  };
+  return y;
+}
+
+void exp_case3(const char *s) {
+ inspect (s) {
+    case "foo" => {}
+    case "bar" => {}
+  };
+}

@@ -8820,7 +8820,8 @@ public:
                                     Stmt *SubStmt, Expr *PatternGuard);
   StmtResult ActOnExpressionPattern(SourceLocation CstExprLoc,
                                     SourceLocation ColonLoc, Expr *CstExpr,
-                                    Stmt *SubStmt, Expr *PatternGuard);
+                                    Stmt *SubStmt, Expr *PatternGuard,
+                                    bool HasCase);
 
   /// DiagnoseAssignmentEnum - Warn if assignment to enum is a constant
   /// integer not in the range of enum values.

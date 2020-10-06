@@ -47,5 +47,10 @@ void TestInspect(int a, int b) {
   // CHECK-NEXT: IntegerLiteral {{.*}} <line:[[@LINE-5]]:5> 'int' 7
   // CHECK-NEXT: ImplicitCastExpr {{.*}} <line:[[@LINE-7]]:19> 'int' <LValueToRValue>
   // CHECK-NEXT: DeclRefExpr {{.*}} <col:19> 'int' lvalue Var {{.*}} 'x' 'int'
+
+  inspect(x) {
+    case 7 =>;
+  };
+  // CHECK: ExpressionPatternStmt {{.*}} <line:[[@LINE-2]]:10, col:14> has_case
 }
 

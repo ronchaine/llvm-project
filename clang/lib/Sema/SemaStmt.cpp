@@ -646,23 +646,25 @@ StmtResult Sema::ActOnIdentifierPattern(SourceLocation IdentifierLoc,
   return IPS;
 }
 
-StmtResult Sema::ActOnExpressionPattern(SourceLocation CstExprLoc,
-                                        SourceLocation ColonLoc, Expr *CstExpr,
-                                        Stmt *SubStmt, Expr *PatternGuard) {
+StmtResult Sema::ActOnExpressionPattern(SourceLocation MatchExprLoc,
+                                        SourceLocation ColonLoc,
+                                        Expr *MatchExpr, Stmt *SubStmt,
+                                        Expr *PatternGuard, bool HasCase) {
 
-  if (getCurFunction()->InspectStack.empty())
+  if (getCurFunction()->InspectStack.empty() || !MatchExpr)
     return StmtError();
   InspectExpr *Inspect = getCurFunction()->InspectStack.back().getPointer();
 
   // FIXME: implement e.match(v) and match(e, v) as in p1371r3, section 5.3.1.3
   ExprResult MatchCond =
-      ActOnBinOp(getCurScope(), CstExprLoc, tok::TokenKind::equalequal, CstExpr,
-                 Inspect->getCond());
+      ActOnBinOp(getCurScope(), MatchExprLoc, tok::TokenKind::equalequal,
+                 MatchExpr, Inspect->getCond());
 
-  auto *EPS = ExpressionPatternStmt::Create(Context, CstExprLoc, ColonLoc,
+  auto *EPS = ExpressionPatternStmt::Create(Context, MatchExprLoc, ColonLoc,
                                             PatternGuard);
   EPS->setMatchCond(MatchCond.get());
   EPS->setSubStmt(SubStmt);
+  EPS->setHasCase(HasCase);
   Inspect->addPattern(EPS);
   return EPS;
 }

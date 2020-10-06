@@ -9404,7 +9404,10 @@ ExprResult Sema::ActOnFinishInspectExpr(SourceLocation InspectLoc,
     return QualType();
   };
 
-  assert(P && "inspect must have at least one pattern");
+  // Inspect must have at least one pattern
+  if (!P)
+    return ExprError();
+
   QualType ResTy =
       (IE->hasExplicitResultType() ? IE->getType() : getPatternExprType(P))
           .getUnqualifiedType();

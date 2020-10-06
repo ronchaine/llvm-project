@@ -222,7 +222,7 @@ Retry:
       // should handle constant-expressions with qualified names
       // (e.g enumerations) without the need for a tok::case to
       // disambiguate.
-      return ParseExpressionPattern(StmtCtx);
+      return ParseExpressionPattern(StmtCtx, false /*HasCase*/);
     }
 
     Token Next = NextToken();
@@ -294,9 +294,10 @@ Retry:
       return StmtError();
     }
 
-    auto *S = getCurScope();
-    if (S && S->isInspectScope() && !S->isPatternScope())
-      return ParseExpressionPattern(StmtCtx);
+    // Matches expression patterns but only cover literals
+    // FIXME: rename the function below and specialize.
+    if (IsMaybeInspectPattern(getCurScope()))
+      return ParseExpressionPattern(StmtCtx, false /*HasCase*/);
 
 
     switch (Tok.getKind()) {
@@ -320,8 +321,13 @@ Retry:
     goto Retry;
   }
 
-  case tok::kw_case:                // C99 6.8.1: labeled-statement
+  case tok::kw_case: {
+    if (IsMaybeInspectPattern(getCurScope()))
+      return ParseExpressionPattern(StmtCtx, true /*HasCase*/);
+
+    // C99 6.8.1: labeled-statement
     return ParseCaseStatement(StmtCtx);
+  }
   case tok::kw_default:             // C99 6.8.1: labeled-statement
     return ParseDefaultStatement(StmtCtx);
 
@@ -970,20 +976,32 @@ StmtResult Parser::ParseIdentifierPattern(ParsedStmtContext StmtCtx) {
   return IPS;
 }
 
-StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx) {
+StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx,
+                                          bool HasCase) {
   assert(getCurScope()->isInspectScope() &&
          "Expression pattern should be in inspect scope");
+  if (HasCase) {
+    assert(HasCase || !Tok.is(tok::kw_case) && "Not a case pattern stmt!");
+    ConsumeToken(); // Consume 'case'
+  }
+
   // Start by parsing the constant-expression
   //
   //   constant-expression pattern-guard[opt] '=>' statement
   //   ^
-  SourceLocation ConstExprLoc = Tok.getLocation();
-  ExprResult CstExpr = ParseConstantExpression();
-  if (CstExpr.isInvalid()) {
-    Diag(Tok, diag::err_expected_constantexpr);
-    SkipUntil(tok::semi);
-    return StmtError();
-  }
+  SourceLocation MatcherLoc = Tok.getLocation();
+  ExprResult Matcher = ParseConstantExpression();
+
+  // Do not bail now, try parsing the rest of the pattern.
+  if (Matcher.isInvalid())
+    Diag(MatcherLoc, diag::err_expected_constantexpr);
+
+  // Covers the core logic for:
+  //
+  //   case constant-expression pattern-guard[opt] '=>' statement
+  //   case id-expression pattern-guard[opt] '=>' statement
+  //   constant-expression pattern-guard[opt] '=>' statement
+  //
 
 
   // Handle pattern-guard[opt]
@@ -999,7 +1017,7 @@ StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx) {
 
   if (!Tok.is(tok::equalarrow)) {
     Diag(Tok, diag::err_expected_equalarrow_after)
-        << (IfLoc.isInvalid() ? ConstExprLoc : IfLoc);
+        << (IfLoc.isInvalid() ? MatcherLoc : IfLoc);
     SkipUntil(tok::semi);
     return StmtError();
   }
@@ -1015,8 +1033,9 @@ StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx) {
   if (SubStmt.isInvalid())
     SubStmt = Actions.ActOnNullStmt(ColonLoc);
 
-  auto EPS = Actions.ActOnExpressionPattern(
-      ConstExprLoc, ColonLoc, CstExpr.get(), SubStmt.get(), Cond.get().second);
+  auto EPS =
+      Actions.ActOnExpressionPattern(MatcherLoc, ColonLoc, Matcher.get(),
+                                     SubStmt.get(), Cond.get().second, HasCase);
 
   PatternScope.Exit();
   return EPS;
