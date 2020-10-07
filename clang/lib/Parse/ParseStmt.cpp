@@ -1000,10 +1000,10 @@ StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx,
 
   // Covers the core logic for:
   //
-  //   case constant-expression pattern-guard[opt] '=>' statement
-  //   case id-expression pattern-guard[opt] '=>' statement
-  //   constant-expression pattern-guard[opt] '=>' statement
+  //   [case] constant-expression pattern-guard[opt] '=>' statement
   //
+  // Usage of identifiers without the 'case' keyword are usually
+  // parsed as identifier patterns, use it to disambiguate.
 
 
   // Handle pattern-guard[opt]

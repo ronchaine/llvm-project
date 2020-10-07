@@ -260,7 +260,6 @@ def err_expected_while : Error<"expected 'while' in do/while loop">;
 
 def err_expected_equalarrow_after : Error<"expected '=>' after %0">;
 def err_expected_constantexpr : Error<"expected constant-expression">;
-def err_expected_const_or_id_expr : Error<"expected constant-expression or id-expression">;
 
 def err_expected_semi_after_stmt : Error<"expected ';' after %0 statement">;
 def err_expected_semi_after_expr : Error<"expected ';' after expression">;
