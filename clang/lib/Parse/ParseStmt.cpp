@@ -948,9 +948,11 @@ StmtResult Parser::ParseIdentifierPattern(ParsedStmtContext StmtCtx) {
 
   if (!Tok.is(tok::equalarrow)) {
     Diag(Tok, diag::err_expected_equalarrow_after)
-        << (IfLoc.isInvalid() ? IdentifierLoc : IfLoc);
-    SkipUntil(tok::semi);
-    return StmtError();
+        << (IfLoc.isInvalid() ? "identifier" : "if");
+    // Extra consume for error recovery when typo for equalarrow "= >"
+    // TODO: add a fix-it for '=>'
+    if (Tok.is(tok::equal) && NextToken().is(tok::greater))
+      ConsumeToken();
   }
   SourceLocation ColonLoc = ConsumeToken();
 
@@ -1017,9 +1019,11 @@ StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx,
 
   if (!Tok.is(tok::equalarrow)) {
     Diag(Tok, diag::err_expected_equalarrow_after)
-        << (IfLoc.isInvalid() ? MatcherLoc : IfLoc);
-    SkipUntil(tok::semi);
-    return StmtError();
+        << (IfLoc.isInvalid() ? "constant-expression" : "if");
+    // Extra consume for error recovery when typo for equalarrow "= >"
+    // TODO: add a fix-it for '=>'
+    if (Tok.is(tok::equal) && NextToken().is(tok::greater))
+      ConsumeToken();
   }
   SourceLocation ColonLoc = ConsumeToken();
 

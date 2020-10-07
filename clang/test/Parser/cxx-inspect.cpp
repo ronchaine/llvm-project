@@ -128,3 +128,11 @@ void exp_case3(const char *s) {
     case "bar" => {}
   };
 }
+
+void bad_equal_arrow(int x) {
+  const int h = 42;
+  inspect (x) {
+    case h = {} // expected-error {{expected '=>' after constant-expression}}
+    y if (h != 0) = > {}; // expected-error {{expected '=>' after if}}
+  };
+}
