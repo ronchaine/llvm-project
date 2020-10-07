@@ -52,5 +52,23 @@ void TestInspect(int a, int b) {
     case 7 =>;
   };
   // CHECK: ExpressionPatternStmt {{.*}} <line:[[@LINE-2]]:10, col:14> has_case
+
+  enum class Color { Red, Green, Blue };
+  enum Color2 { Red, Green, Blue };
+
+  inspect (x) {
+    (int)Color::Red => {}
+    case Green => {}
+    8 => {}
+    Green if(x>0) => {} // should be parsed as identifier pattern
+    __ => {}
+  };
+  // CHECK: InspectExpr {{.*}} 'void' has_implicit_result_type
+  // CHECK: ExpressionPatternStmt
+  // CHECK: ExpressionPatternStmt
+  // CHECK: ExpressionPatternStmt
+  // CHECK: IdentifierPatternStmt
+  // CHECK: WildcardPatternStmt
+
 }
 
