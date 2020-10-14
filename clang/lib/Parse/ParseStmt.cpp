@@ -995,8 +995,10 @@ StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx,
   ExprResult Matcher = ParseConstantExpression();
 
   // Do not bail now, try parsing the rest of the pattern.
-  if (Matcher.isInvalid())
+  if (Matcher.isInvalid()) {
     Diag(MatcherLoc, diag::err_expected_constantexpr);
+    SkipUntil(tok::kw_if, tok::equalarrow, StopAtSemi | StopBeforeMatch);
+  }
 
   // Covers the core logic for:
   //
@@ -1036,6 +1038,8 @@ StmtResult Parser::ParseExpressionPattern(ParsedStmtContext StmtCtx,
 
   if (SubStmt.isInvalid())
     SubStmt = Actions.ActOnNullStmt(ColonLoc);
+  if (Matcher.isInvalid())
+    return StmtError();
 
   auto EPS =
       Actions.ActOnExpressionPattern(MatcherLoc, ColonLoc, Matcher.get(),

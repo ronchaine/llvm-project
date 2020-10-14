@@ -655,10 +655,23 @@ StmtResult Sema::ActOnExpressionPattern(SourceLocation MatchExprLoc,
     return StmtError();
   InspectExpr *Inspect = getCurFunction()->InspectStack.back().getPointer();
 
+  // FIXME: support user defined literals.
+  bool IsLiteral =
+      isa<StringLiteral>(MatchExpr) || isa<CXXBoolLiteralExpr>(MatchExpr) ||
+      isa<ObjCBoolLiteralExpr>(MatchExpr) || isa<CharacterLiteral>(MatchExpr);
+
+  ExprResult ER = ActOnFinishFullExpr(MatchExpr, MatchExpr->getExprLoc(),
+                                      /*DiscardedValue*/ false,
+                                      /*IsConstexpr*/ true);
+
+  // FIXME: we also don't support 'const char *s' just yet.
+  if (!ER.isInvalid() && !ER.get()->isValueDependent() && !IsLiteral)
+    ER = VerifyIntegerConstantExpression(ER.get());
+
   // FIXME: implement e.match(v) and match(e, v) as in p1371r3, section 5.3.1.3
   ExprResult MatchCond =
       ActOnBinOp(getCurScope(), MatchExprLoc, tok::TokenKind::equalequal,
-                 MatchExpr, Inspect->getCond());
+                 ER.isInvalid() ? MatchExpr : ER.get(), Inspect->getCond());
 
   auto *EPS = ExpressionPatternStmt::Create(Context, MatchExprLoc, ColonLoc,
                                             PatternGuard);

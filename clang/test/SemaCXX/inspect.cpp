@@ -1,4 +1,4 @@
-// RUN: %clang_cc1 -fsyntax-only -verify -fpattern-matching -Wno-unused-value %s
+// RUN: %clang_cc1 -fsyntax-only -verify -fpattern-matching -Wno-unused-value -Wno-string-compare %s
 
 void a() {
   inspect(42) {
@@ -62,5 +62,59 @@ int i() {
   int y = 4;
   inspect (y) {
     x => {} // x is defined within pattern scope, inspect should return 4.
+  };
+}
+
+void pat_exp_literals(char *s, char c, bool b) {
+  inspect(s) {
+    case "foo" => {}
+  };
+  inspect(c) {
+    case 'c' => {}
+  };
+  inspect(b) {
+    case true => {}
+  };
+}
+
+void pat_exp_nodirect_literals(char *s, char c, bool b) {
+  const char *foo = "foo";
+  inspect(s) {
+    // FIXME: this should be accepted
+    case foo => {} // expected-error {{integral constant expression must have integral or unscoped enumeration type, not 'const char *'}}
+  };
+
+  const char ch = 'c';
+  inspect(c) {
+    case ch => {}
+  };
+
+  const bool boo = true;
+  inspect(b) {
+    case boo => {}
+  };
+}
+
+const int z = int();
+constexpr int Sum(int a = 0, const int &b = 0, const int *c = &z, char d = 0) {
+  return a + b + *c + d;
+}
+
+void integral_constants(int x) { // expected-note {{declared here}}
+  const int h = 42;
+  struct Y { int a; int b; };
+  const Y y = {2, 3};
+  Y y2 = {4+x, 3+x}; // expected-note {{declared here}}
+  inspect (x) {
+    case h => {}
+    case y.a => {}
+    case y2.b => {} // expected-error {{expression is not an integral constant expression}}
+                    // expected-note@-1 {{read of non-constexpr variable 'y2' is not allowed in a constant expression}}
+    case ++x => {} // expected-error {{expression is not an integral constant expression}}
+                   // expected-note@-1 {{a constant expression cannot modify an object that is visible outside that expression}}
+    case 0 => {}
+    case Sum(3) => {}
+    case Sum(x) => {} //  expected-error {{expression is not an integral constant expression}}
+                      //  expected-note@-1 {{read of non-const variable 'x' is not allowed in a constant expression}}
   };
 }

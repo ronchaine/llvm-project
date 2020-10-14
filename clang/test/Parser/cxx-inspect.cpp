@@ -77,7 +77,8 @@ void exp_pat1(const char *s) {
  };
 }
 
-enum class Color { Red, Green, Blue };
+// FIXME: should we support scoped enums?
+enum Color { Red, Green, Blue };
 
 void exp_pat2(Color color) {
   inspect (color) {
@@ -104,8 +105,7 @@ void exp_case0(Color color) {
   };
 }
 
-enum Color2 { Red, Green, Blue };
-void exp_case1(Color2 c) {
+void exp_case1(Color c) {
   inspect (c) {
     case Red => {}
     case Green => {}
