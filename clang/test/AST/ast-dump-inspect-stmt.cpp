@@ -43,11 +43,11 @@ void TestInspect(int a, int b) {
   };
   // CHECK: ExpressionPatternStmt {{.*}} <line:[[@LINE-2]]:5, col:10>
   // CHECK-NEXT: IntegerLiteral {{.*}} <col:10> 'int' 4
-  // CHECK-NEXT: BinaryOperator {{.*}} <col:5, line:[[@LINE-5]]:19> 'bool' '=='
+  // CHECK-NEXT: BinaryOperator {{.*}} <line:[[@LINE-5]]:19, line:[[@LINE-4]]:5>  'bool' '=='
+  // CHECK-NEXT: ImplicitCastExpr {{.*}} <line:[[@LINE-6]]:19> 'int' <LValueToRValue>
+  // CHECK-NEXT: DeclRefExpr {{.*}} <col:19> 'int' lvalue Var {{.*}} 'x' 'int'
   // CHECK-NEXT: ConstantExpr {{.*}} 'int' Int: 7
   // CHECK-NEXT: IntegerLiteral {{.*}}
-  // CHECK-NEXT: ImplicitCastExpr {{.*}} <line:[[@LINE-8]]:19> 'int' <LValueToRValue>
-  // CHECK-NEXT: DeclRefExpr {{.*}} <col:19> 'int' lvalue Var {{.*}} 'x' 'int'
 
   inspect(x) {
     case 7 =>;

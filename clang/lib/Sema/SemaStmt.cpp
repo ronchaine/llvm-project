@@ -646,6 +646,50 @@ StmtResult Sema::ActOnIdentifierPattern(SourceLocation IdentifierLoc,
   return IPS;
 }
 
+ExprResult Sema::CheckPatternConstantExpr(Expr *MatchExpr,
+                                          SourceLocation MatchExprLoc) {
+  // FIXME: handle dependent types
+  // FIXME: support user defined literals.
+  if (isa<StringLiteral>(MatchExpr) || isa<CXXBoolLiteralExpr>(MatchExpr) ||
+      isa<ObjCBoolLiteralExpr>(MatchExpr) || isa<CharacterLiteral>(MatchExpr))
+    return MatchExpr;
+
+  // Check the expression is a constant expression.
+  if (MatchExpr->getType()->isIntegralOrUnscopedEnumerationType())
+    return VerifyIntegerConstantExpression(MatchExpr);
+
+  SmallVector<PartialDiagnosticAt, 8> Notes;
+  Expr::EvalResult Eval;
+  Eval.Diag = &Notes;
+  ExprResult ER;
+
+  // The expression can't be folded, nothing else to try here.
+  if (!MatchExpr->EvaluateAsRValue(Eval, Context, false))
+    ER = ExprError();
+  else if (Notes.empty()) { // It's a constant expression.
+    if (!isa<ConstantExpr>(MatchExpr))
+      ER = ConstantExpr::Create(Context, MatchExpr, Eval.Val);
+    else
+      ER = MatchExpr;
+  }
+
+  if (!Notes.empty() || ER.isInvalid()) {
+    // It's not a constant expression. Produce an appropriate diagnostic.
+    if (Notes.size() == 1 &&
+        Notes[0].second.getDiagID() == diag::note_invalid_subexpr_in_const_expr)
+      Diag(Notes[0].first, diag::err_expr_not_cce) << CCEK_PatternExpr;
+    else {
+      Diag(MatchExprLoc, diag::err_expr_not_cce)
+          << CCEK_PatternExpr << MatchExpr->getSourceRange();
+      for (unsigned I = 0; I < Notes.size(); ++I)
+        Diag(Notes[I].first, Notes[I].second);
+    }
+    return ExprError();
+  }
+
+  return ER;
+}
+
 StmtResult Sema::ActOnExpressionPattern(SourceLocation MatchExprLoc,
                                         SourceLocation ColonLoc,
                                         Expr *MatchExpr, Stmt *SubStmt,
@@ -654,24 +698,17 @@ StmtResult Sema::ActOnExpressionPattern(SourceLocation MatchExprLoc,
   if (getCurFunction()->InspectStack.empty() || !MatchExpr)
     return StmtError();
   InspectExpr *Inspect = getCurFunction()->InspectStack.back().getPointer();
-
-  // FIXME: support user defined literals.
-  bool IsLiteral =
-      isa<StringLiteral>(MatchExpr) || isa<CXXBoolLiteralExpr>(MatchExpr) ||
-      isa<ObjCBoolLiteralExpr>(MatchExpr) || isa<CharacterLiteral>(MatchExpr);
-
   ExprResult ER = ActOnFinishFullExpr(MatchExpr, MatchExpr->getExprLoc(),
                                       /*DiscardedValue*/ false,
                                       /*IsConstexpr*/ true);
 
-  // FIXME: we also don't support 'const char *s' just yet.
-  if (!ER.isInvalid() && !ER.get()->isValueDependent() && !IsLiteral)
-    ER = VerifyIntegerConstantExpression(ER.get());
+  if (!ER.isInvalid())
+    ER = CheckPatternConstantExpr(MatchExpr, MatchExprLoc);
 
   // FIXME: implement e.match(v) and match(e, v) as in p1371r3, section 5.3.1.3
   ExprResult MatchCond =
       ActOnBinOp(getCurScope(), MatchExprLoc, tok::TokenKind::equalequal,
-                 ER.isInvalid() ? MatchExpr : ER.get(), Inspect->getCond());
+                 Inspect->getCond(), ER.isInvalid() ? MatchExpr : ER.get());
 
   auto *EPS = ExpressionPatternStmt::Create(Context, MatchExprLoc, ColonLoc,
                                             PatternGuard);

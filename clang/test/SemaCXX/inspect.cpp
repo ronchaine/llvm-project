@@ -80,8 +80,10 @@ void pat_exp_literals(char *s, char c, bool b) {
 void pat_exp_nodirect_literals(char *s, char c, bool b) {
   const char *foo = "foo";
   inspect(s) {
-    // FIXME: this should be accepted
-    case foo => {} // expected-error {{integral constant expression must have integral or unscoped enumeration type, not 'const char *'}}
+    // FIXME: should be accepted? See raw_string_tests below for more.
+    case foo => {} // expected-error {{pattern is not a constant expression}}
+                   // expected-note@-1 {{read of non-constexpr variable 'foo' is not allowed in a constant expression}}
+                   // expected-note@-5 {{declared here}}
   };
 
   const char ch = 'c';
@@ -116,5 +118,48 @@ void integral_constants(int x) { // expected-note {{declared here}}
     case Sum(3) => {}
     case Sum(x) => {} //  expected-error {{expression is not an integral constant expression}}
                       //  expected-note@-1 {{read of non-const variable 'x' is not allowed in a constant expression}}
+  };
+}
+
+struct A {
+  static constexpr const char *s = "s";
+};
+const char *gs = "gs"; // expected-note {{declared here}}
+void raw_string_tests(const char *x) {
+  static const char *in0 = "in0"; // expected-note {{declared here}}
+  const char *in1 = "in1"; // expected-note {{declared here}}
+  constexpr const char *in2 = "in2";
+
+  inspect(x) {
+    case gs => {}; // expected-error {{pattern is not a constant expression}}
+                   // expected-note@-1 {{read of non-constexpr variable 'gs' is not allowed in a constant expression}}
+    case in0 => {}; // expected-error {{pattern is not a constant expression}}
+                    // expected-note@-1 {{read of non-constexpr variable 'in0' is not allowed in a constant expression}}
+    case A::s => {};
+    case in1 => {}; // expected-error {{pattern is not a constant expression}}
+                    // expected-note@-1 {{read of non-constexpr variable 'in1' is not allowed in a constant expression}}
+    case in2 => {};
+  };
+}
+
+void int_struct(int x) {
+  struct s {
+    int a;
+    int b;
+    bool operator==(const s &other) const
+    {
+      return a != other.a;
+    }
+  };
+  s s1{3,4};
+  constexpr s s2{4,5};
+  s s3{4,5}; // expected-note {{declared here}}
+  const s s4{4,5};
+  inspect (s1) {
+    case s2 => {};
+    case s3 => {}; // expected-error {{pattern is not a constant expression}}
+                   // expected-note@-1 {{read of non-constexpr variable 's3' is not allowed in a constant expression}}
+    case s4 => {}; // expected-error {{pattern is not a constant expression}}
+                   // expected-note@-1 {{read of non-constexpr variable 's4' is not allowed in a constant expression}}
   };
 }

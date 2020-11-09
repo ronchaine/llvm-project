@@ -8297,6 +8297,7 @@ public:
                                   ///< message.
     CCEK_StaticAssertMessageData, ///< Call to data() in a static assert
                                   ///< message.
+    CCEK_PatternExpr,  ///< Inspect's pattern matching expression.
   };
 
   ExprResult BuildConvertedConstantExpression(Expr *From, QualType T,
@@ -8822,6 +8823,8 @@ public:
                                     SourceLocation ColonLoc, Expr *CstExpr,
                                     Stmt *SubStmt, Expr *PatternGuard,
                                     bool HasCase);
+  ExprResult CheckPatternConstantExpr(Expr *MatchExpr,
+                                      SourceLocation MatchExprLoc);
 
   /// DiagnoseAssignmentEnum - Warn if assignment to enum is a constant
   /// integer not in the range of enum values.
