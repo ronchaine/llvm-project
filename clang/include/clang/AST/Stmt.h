@@ -1228,7 +1228,7 @@ protected:
     /// Used by PatternStmt to discover whether a
     /// pattern statement contributes to return type deduction
     /// for the overall inspect expression
-    unsigned PatternStmtExcludedFromTypeDeduction : 1;
+    unsigned SkipTypeDeduction : 1;
 
     /// The location of the '__' wildcard, identifier or
     /// constant expression.
@@ -4025,19 +4025,17 @@ protected:
   /// The location of the ":".
   SourceLocation ColonLoc;
 
-  /// The location of the "!" (type deduction exclusion marker) if present
-  SourceLocation ExclaimLoc;
-
   /// A pointer to the following PatternStmt class in the same
   /// inspect statement.
   PatternStmt *NextPattern = nullptr;
 
   PatternStmt(StmtClass SC, SourceLocation KWLoc, SourceLocation ColonLoc,
-              SourceLocation ExclaimLoc)
+              bool ExcludedFromTypeDeduction)
       : Stmt(SC), ColonLoc(ColonLoc) {
     setPatternLoc(KWLoc);
     setHasCase(false);
-    setExclaimLoc(ExclaimLoc);
+
+    InspectPatternBits.SkipTypeDeduction = ExcludedFromTypeDeduction;
   }
 
   PatternStmt(StmtClass SC, EmptyShell) : Stmt(SC) {}
@@ -4068,13 +4066,8 @@ public:
   inline void setHasCase(bool HasCase) { InspectPatternBits.HasCase = HasCase; }
   inline bool hasCase() const { return InspectPatternBits.HasCase; }
 
-  SourceLocation getExclaimLoc() const { return ExclaimLoc; }
-  void setExclaimLoc(SourceLocation L) {
-    ExclaimLoc = L;
-    InspectPatternBits.PatternStmtExcludedFromTypeDeduction = L.isValid();
-  }
   inline bool excludedFromTypeDeduction() const {
-    return InspectPatternBits.PatternStmtExcludedFromTypeDeduction;
+    return InspectPatternBits.SkipTypeDeduction;
   }
 
   SourceLocation getBeginLoc() const { return getPatternLoc(); }
@@ -4112,9 +4105,10 @@ class WildcardPatternStmt final
 
 public:
   WildcardPatternStmt(SourceLocation PatternLoc, SourceLocation ColonLoc,
-                      Stmt *SubStmt, Expr *Guard, SourceLocation ExclaimLoc)
+                      Stmt *SubStmt, Expr *Guard,
+                      bool ExcludedFromTypeDeduction)
       : PatternStmt(WildcardPatternStmtClass, PatternLoc, ColonLoc,
-                    ExclaimLoc) {
+                    ExcludedFromTypeDeduction) {
     setSubStmt(SubStmt);
     if (Guard) {
       InspectPatternBits.PatternStmtHasPatternGuard = true;
@@ -4133,7 +4127,7 @@ public:
                                      SourceLocation PatternLoc,
                                      SourceLocation ColonLoc,
                                      Expr *patternGuard,
-                                     SourceLocation ExclaimLoc);
+                                     bool ExcludedFromTypeDeduction);
 
   /// Build an empty wildcard pattern statement.
   static WildcardPatternStmt *CreateEmpty(const ASTContext &Ctx,
@@ -4234,9 +4228,9 @@ class IdentifierPatternStmt final
 public:
   IdentifierPatternStmt(SourceLocation PatternLoc, SourceLocation ColonLoc,
                         Stmt *VD, Stmt *SubStmt, Expr *Guard,
-                        SourceLocation ExclaimLoc)
+                        bool ExcludedFromTypeDeduction)
       : PatternStmt(IdentifierPatternStmtClass, PatternLoc, ColonLoc,
-                    ExclaimLoc) {
+                    ExcludedFromTypeDeduction) {
     setSubStmt(SubStmt);
     setVar(VD);
 
@@ -4257,7 +4251,7 @@ public:
                                        SourceLocation PatternLoc,
                                        SourceLocation ColonLoc,
                                        Expr *patternGuard,
-                                       SourceLocation ExclaimLoc);
+                                       bool ExcludedFromTypeDeduction);
 
   /// Build an empty identifier pattern statement.
   static IdentifierPatternStmt *CreateEmpty(const ASTContext &Ctx,
@@ -4367,9 +4361,9 @@ class ExpressionPatternStmt final
 public:
   ExpressionPatternStmt(SourceLocation PatternLoc, SourceLocation ColonLoc,
                         Stmt *MatchCond, Stmt *SubStmt, Expr *Guard,
-                        SourceLocation ExclaimLoc)
+                        bool ExcludedFromTypeDeduction)
       : PatternStmt(ExpressionPatternStmtClass, PatternLoc, ColonLoc,
-                    ExclaimLoc) {
+                    ExcludedFromTypeDeduction) {
     setSubStmt(SubStmt);
     setMatchCond(MatchCond);
 
@@ -4390,7 +4384,7 @@ public:
                                        SourceLocation PatternLoc,
                                        SourceLocation ColonLoc,
                                        Expr *patternGuard,
-                                       SourceLocation ExclaimLoc);
+                                       bool ExcludedFromTypeDeduction);
 
   /// Build an empty expression pattern statement.
   static ExpressionPatternStmt *CreateEmpty(const ASTContext &Ctx,
