@@ -381,7 +381,7 @@ void StmtPrinter::VisitInspectExpr(InspectExpr *Node) {
 }
 
 void StmtPrinter::VisitWildcardPatternStmt(WildcardPatternStmt *Node) {
-  Indent() << "__ :" << NL;
+  Indent() << "__ =>" << NL;
   if (Node->getPatternGuard()) {
     PrintExpr(Node->getPatternGuard());
   }
@@ -394,7 +394,7 @@ void StmtPrinter::VisitIdentifierPatternStmt(IdentifierPatternStmt *Node) {
   if (Node->getPatternGuard()) {
     PrintExpr(Node->getPatternGuard());
   }
-  OS << " :" << NL;
+  OS << " =>" << NL;
   PrintStmt(Node->getSubStmt(), 0);
 }
 
@@ -404,7 +404,7 @@ void StmtPrinter::VisitExpressionPatternStmt(ExpressionPatternStmt *Node) {
   if (Node->getPatternGuard()) {
     PrintExpr(Node->getPatternGuard());
   }
-  OS << " :" << NL;
+  OS << " =>" << NL;
   PrintStmt(Node->getSubStmt(), 0);
 }
 

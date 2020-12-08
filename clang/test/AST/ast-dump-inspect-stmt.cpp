@@ -35,7 +35,7 @@ void TestInspect(int a, int b) {
   // CHECK: IdentifierPatternStmt 0x{{[^ ]*}} <line:[[@LINE-3]]:5, col:11>
   // CHECK-NEXT: UnaryOperator 0x{{[^ ]*}} <col:10, col:11> 'int':'int' postfix '++'
   // CHECK-NEXT: DeclRefExpr 0x{{[^ ]*}} <col:10> 'int':'int' lvalue Var 0x{{[^ ]*}} 'y' 'int &'
-  // CHECK-NEXT: DeclStmt 0x{{[^ ]*}} <col:7>
+  // CHECK-NEXT: DeclStmt 0x{{[^ ]*}} <col:5>
   // CHECK-NEXT: VarDecl 0x{{.*}} used y 'int &' auto cinit
 
   int v = inspect(x) -> int {
@@ -72,4 +72,3 @@ void TestInspect(int a, int b) {
   // CHECK: WildcardPatternStmt
 
 }
-
