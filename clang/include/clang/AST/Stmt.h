@@ -4110,6 +4110,7 @@ public:
       : PatternStmt(WildcardPatternStmtClass, PatternLoc, ColonLoc,
                     ExcludedFromTypeDeduction) {
     setSubStmt(SubStmt);
+    InspectPatternBits.PatternStmtHasPatternGuard = false;
     if (Guard) {
       InspectPatternBits.PatternStmtHasPatternGuard = true;
       setPatternGuard(Guard);
@@ -4233,7 +4234,7 @@ public:
                     ExcludedFromTypeDeduction) {
     setSubStmt(SubStmt);
     setVar(VD);
-
+    InspectPatternBits.PatternStmtHasPatternGuard = false;
     if (Guard) {
       InspectPatternBits.PatternStmtHasPatternGuard = true;
       setPatternGuard(Guard);
@@ -4366,7 +4367,7 @@ public:
                     ExcludedFromTypeDeduction) {
     setSubStmt(SubStmt);
     setMatchCond(MatchCond);
-
+    InspectPatternBits.PatternStmtHasPatternGuard = false;
     if (Guard) {
       InspectPatternBits.PatternStmtHasPatternGuard = true;
       setPatternGuard(Guard);
