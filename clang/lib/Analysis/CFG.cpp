@@ -641,6 +641,8 @@ private:
   CFGBlock *VisitWildcardPatternStmt(WildcardPatternStmt *Terminator);
   CFGBlock *VisitIdentifierPatternStmt(IdentifierPatternStmt *Terminator);
   CFGBlock *VisitExpressionPatternStmt(ExpressionPatternStmt *Terminator);
+  CFGBlock *
+  VisitStructuredBindingPatternStmt(StructuredBindingPatternStmt *Terminator);
 
   void maybeAddScopeBeginForVarDecl(CFGBlock *B, const VarDecl *VD,
                                     const Stmt *S) {
@@ -4589,6 +4591,11 @@ CFGBuilder::VisitIdentifierPatternStmt(IdentifierPatternStmt *Terminator) {
 
 CFGBlock *
 CFGBuilder::VisitExpressionPatternStmt(ExpressionPatternStmt *Terminator) {
+  return nullptr;
+}
+
+CFGBlock *CFGBuilder::VisitStructuredBindingPatternStmt(
+    StructuredBindingPatternStmt *Terminator) {
   return nullptr;
 }
 

@@ -1213,6 +1213,7 @@ protected:
     friend class WildcardPatternStmt;
     friend class IdentifierPatternStmt;
     friend class ExpressionPatternStmt;
+    friend class StructuredBindingPatternStmt;
 
     unsigned : NumStmtBits;
 
@@ -1230,8 +1231,13 @@ protected:
     /// for the overall inspect expression
     unsigned SkipTypeDeduction : 1;
 
-    /// The location of the '__' wildcard, identifier or
-    /// constant expression.
+    /// For StructuredBindingPatternStmt, it tracks the
+    /// number of patterns contained in the stmt. Note
+    /// that this should change if any new field is added
+    unsigned NumPats : 32 - (NumStmtBits + 1 + 1 + 1);
+
+    /// The location of the '__' wildcard, identifier,
+    /// constant expression or pattern list.
     SourceLocation PatternLoc;
   };
 
@@ -4076,7 +4082,8 @@ public:
   static bool classof(const Stmt *T) {
     return T->getStmtClass() == WildcardPatternStmtClass ||
            T->getStmtClass() == IdentifierPatternStmtClass ||
-           T->getStmtClass() == ExpressionPatternStmtClass;
+           T->getStmtClass() == ExpressionPatternStmtClass ||
+           T->getStmtClass() == StructuredBindingPatternStmtClass;
   }
 };
 
@@ -4223,7 +4230,7 @@ class IdentifierPatternStmt final
   }
 
   unsigned numTrailingObjects(OverloadToken<Stmt *>) const {
-    return NumMandatoryStmtPtr;
+    return NumMandatoryStmtPtr + hasPatternGuard();
   }
 
 public:
@@ -4356,7 +4363,7 @@ class ExpressionPatternStmt final
   }
 
   unsigned numTrailingObjects(OverloadToken<Stmt *>) const {
-    return NumMandatoryStmtPtr;
+    return NumMandatoryStmtPtr + hasPatternGuard();
   }
 
 public:
@@ -4464,6 +4471,178 @@ public:
   }
 };
 
+/// Describes C++ pattern-list for structural bindings in inspects.
+class StructuredBindingPatternStmt final
+    : public PatternStmt,
+      private llvm::TrailingObjects<StructuredBindingPatternStmt, Stmt *> {
+  friend TrailingObjects;
+  SourceLocation LSquareLoc, RSquareLoc;
+
+  // StructuredBindingPatternStmt is followed by several trailing objects.
+  //
+  // * A "Stmt *" for the substatement of the pattern statement. Always present.
+  //
+  // * A "Stmt *" for the condition.
+  //    Present if and only if hasPatternGuard(). This is in fact a "Expr *".
+  //
+  // * A list of "Stmt *" to build the pattern condition from.
+  //
+  enum { SubStmtOffset = 0 };
+  enum { NumMandatoryStmtPtr = 1 };
+
+  unsigned subStmtOffset() const { return SubStmtOffset; }
+  unsigned patternGuardOffset() const { return hasPatternGuard(); }
+  unsigned patsOffset() const {
+    return NumMandatoryStmtPtr + hasPatternGuard();
+  }
+
+  unsigned numTrailingObjects(OverloadToken<Stmt *>) const {
+    return NumMandatoryStmtPtr + hasPatternGuard() + InspectPatternBits.NumPats;
+  }
+
+public:
+  StructuredBindingPatternStmt(SourceLocation PatternLoc,
+                               SourceLocation ColonLoc, SourceLocation LLoc,
+                               SourceLocation RLoc, ArrayRef<Stmt *> Stmts,
+                               Stmt *SubStmt, Expr *Guard,
+                               bool ExcludedFromTypeDeduction);
+
+  /// Build an empty expression pattern statement.
+  explicit StructuredBindingPatternStmt(EmptyShell Empty, bool HasPatternGuard)
+      : PatternStmt(StructuredBindingPatternStmtClass, Empty) {
+    InspectPatternBits.PatternStmtHasPatternGuard = HasPatternGuard;
+    InspectPatternBits.NumPats = 0;
+  }
+
+  /// Build a expression pattern statement.
+  static StructuredBindingPatternStmt *
+  Create(const ASTContext &Ctx, SourceLocation PatternLoc,
+         SourceLocation ColonLoc, SourceLocation LLoc, SourceLocation RLoc,
+         ArrayRef<Stmt *> Stmts, Stmt *SubStmt, Expr *Guard,
+         bool ExcludedFromTypeDeduction);
+
+  /// Build an empty expression pattern statement.
+  static StructuredBindingPatternStmt *CreateEmpty(const ASTContext &Ctx,
+                                                   bool HasPatternGuard);
+
+  SourceLocation getLSquareLoc() const { return LSquareLoc; }
+  void setLSquareLoc(SourceLocation Loc) { LSquareLoc = Loc; }
+  SourceLocation getRSquareLoc() const { return RSquareLoc; }
+  void setRSquareLoc(SourceLocation Loc) { RSquareLoc = Loc; }
+  SourceLocation getBeginLoc() const LLVM_READONLY { return getLSquareLoc(); }
+  SourceLocation getEndLoc() const LLVM_READONLY { return getRSquareLoc(); }
+
+  static bool classof(const Stmt *T) {
+    return T->getStmtClass() == StructuredBindingPatternStmtClass;
+  }
+
+  SourceLocation getIdentifierLoc() const { return getPatternLoc(); }
+  void setIdentifierLoc(SourceLocation L) { setPatternLoc(L); }
+
+  Stmt *getSubStmt() { return getTrailingObjects<Stmt *>()[subStmtOffset()]; }
+  const Stmt *getSubStmt() const {
+    return getTrailingObjects<Stmt *>()[subStmtOffset()];
+  }
+
+  void setSubStmt(Stmt *S) {
+    getTrailingObjects<Stmt *>()[subStmtOffset()] = S;
+  }
+
+  Expr *getPatternGuard() {
+    assert(hasPatternGuard() && "This pattern has no guard to get!");
+    return reinterpret_cast<Expr *>(
+        getTrailingObjects<Stmt *>()[patternGuardOffset()]);
+  }
+
+  const Expr *getPatternGuard() const {
+    assert(hasPatternGuard() && "This pattern has no guard to get!");
+    return reinterpret_cast<Expr *>(
+        getTrailingObjects<Stmt *>()[patternGuardOffset()]);
+  }
+
+  void setPatternGuard(Expr *Guard) {
+    getTrailingObjects<Stmt *>()[patternGuardOffset()] =
+        reinterpret_cast<Stmt *>(Guard);
+  }
+
+  bool hasPatternGuard() const {
+    return InspectPatternBits.PatternStmtHasPatternGuard;
+  }
+
+  void setPats(ArrayRef<Stmt *> Stmts);
+
+  // Iterators
+  bool pats_empty() const { return InspectPatternBits.NumPats == 0; }
+  unsigned size() const { return InspectPatternBits.NumPats; }
+
+  using pats_iterator = Stmt **;
+  using pats_range = llvm::iterator_range<pats_iterator>;
+
+  pats_range pats() { return pats_range(pats_begin(), pats_end()); }
+  pats_iterator pats_begin() {
+    return getTrailingObjects<Stmt *>() + patsOffset();
+  }
+  pats_iterator pats_end() { return pats_begin() + size(); }
+  Stmt *pats_front() { return !pats_empty() ? pats_begin()[0] : nullptr; }
+
+  Stmt *pats_back() {
+    return !pats_empty() ? pats_begin()[size() - 1] : nullptr;
+  }
+
+  using const_pats_iterator = Stmt *const *;
+  using pats_const_range = llvm::iterator_range<const_pats_iterator>;
+
+  pats_const_range pats() const {
+    return pats_const_range(pats_begin(), pats_end());
+  }
+
+  const_pats_iterator pats_begin() const {
+    return getTrailingObjects<Stmt *>() + patsOffset();
+  }
+
+  const_pats_iterator pats_end() const { return pats_begin() + size(); }
+
+  const Stmt *pats_front() const {
+    return !pats_empty() ? pats_begin()[0] : nullptr;
+  }
+
+  const Stmt *pats_back() const {
+    return !pats_empty() ? pats_begin()[size() - 1] : nullptr;
+  }
+
+  using reverse_pats_iterator = std::reverse_iterator<pats_iterator>;
+
+  reverse_pats_iterator pats_rbegin() {
+    return reverse_pats_iterator(pats_end());
+  }
+
+  reverse_pats_iterator pats_rend() {
+    return reverse_pats_iterator(pats_begin());
+  }
+
+  using const_reverse_pats_iterator =
+      std::reverse_iterator<const_pats_iterator>;
+
+  const_reverse_pats_iterator pats_rbegin() const {
+    return const_reverse_pats_iterator(pats_end());
+  }
+
+  const_reverse_pats_iterator pats_rend() const {
+    return const_reverse_pats_iterator(pats_begin());
+  }
+
+  child_range children() {
+    return child_range(getTrailingObjects<Stmt *>(), pats_end());
+  }
+
+  const_child_range children() const {
+    return const_child_range(getTrailingObjects<Stmt *>(), pats_end());
+  }
+
+  friend class ASTStmtReader;
+  friend class ASTStmtWriter;
+};
+
 SourceLocation PatternStmt::getEndLoc() const {
   if (const auto *WP = dyn_cast<WildcardPatternStmt>(this))
     return WP->getEndLoc();
@@ -4471,9 +4650,10 @@ SourceLocation PatternStmt::getEndLoc() const {
     return IP->getEndLoc();
   else if (const auto *EP = dyn_cast<ExpressionPatternStmt>(this))
     return EP->getEndLoc();
+  else if (const auto *SBP = dyn_cast<StructuredBindingPatternStmt>(this))
+    return SBP->getEndLoc();
 
-  llvm_unreachable("PatternStmt is neither a WildcardPatternStmt nor"
-                   "a IdentifierPatternStmt, nor a ExpressionPatternStmt!");
+  llvm_unreachable("Unknown PatternStmt!");
 }
 
 Stmt *PatternStmt::getSubStmt() {
@@ -4483,9 +4663,10 @@ Stmt *PatternStmt::getSubStmt() {
     return IP->getSubStmt();
   else if (auto *EP = dyn_cast<ExpressionPatternStmt>(this))
     return EP->getSubStmt();
+  else if (auto *SBP = dyn_cast<StructuredBindingPatternStmt>(this))
+    return SBP->getSubStmt();
 
-  llvm_unreachable("PatternStmt is neither a WildcardPatternStmt nor"
-                   "a IdentifierPatternStmt, nor a ExpressionPatternStmt!");
+  llvm_unreachable("Unknown PatternStmt!");
 }
 
 bool PatternStmt::hasPatternGuard() const {
@@ -4495,9 +4676,10 @@ bool PatternStmt::hasPatternGuard() const {
     return IP->hasPatternGuard();
   else if (auto *EP = dyn_cast<ExpressionPatternStmt>(this))
     return EP->hasPatternGuard();
+  else if (auto *SBP = dyn_cast<StructuredBindingPatternStmt>(this))
+    return SBP->hasPatternGuard();
 
-  llvm_unreachable("PatternStmt is neither a WildcardPatternStmt nor"
-                   "a IdentifierPatternStmt, nor a ExpressionPatternStmt!");
+  llvm_unreachable("Unknown PatternStmt!");
 }
 
 Expr *PatternStmt::getPatternGuard() {
@@ -4507,9 +4689,10 @@ Expr *PatternStmt::getPatternGuard() {
     return IP->getPatternGuard();
   else if (auto *EP = dyn_cast<ExpressionPatternStmt>(this))
     return EP->getPatternGuard();
+  else if (auto *SBP = dyn_cast<StructuredBindingPatternStmt>(this))
+    return SBP->getPatternGuard();
 
-  llvm_unreachable("PatternStmt is neither a WildcardPatternStmt nor"
-                   "a IdentifierPatternStmt, nor a ExpressionPatternStmt!");
+  llvm_unreachable("Unknown PatternStmt!");
 }
 
 void PatternStmt::setPatternGuard(Expr *PatternGuard) {
@@ -4519,9 +4702,10 @@ void PatternStmt::setPatternGuard(Expr *PatternGuard) {
     IP->setPatternGuard(PatternGuard);
   else if (auto *EP = dyn_cast<ExpressionPatternStmt>(this))
     EP->setPatternGuard(PatternGuard);
+  else if (auto *SBP = dyn_cast<StructuredBindingPatternStmt>(this))
+    return SBP->setPatternGuard(PatternGuard);
 
-  llvm_unreachable("PatternStmt is neither a WildcardPatternStmt nor"
-                   "a IdentifierPatternStmt, nor a ExpressionPatternStmt!");
+  llvm_unreachable("Unknown PatternStmt!");
 }
 
 } // namespace clang

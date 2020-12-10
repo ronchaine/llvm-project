@@ -2134,10 +2134,20 @@ private:
                                    ParsedStmtContext StmtCtx);
   bool ParsePatternGuard(Sema::ConditionResult &Cond, SourceLocation &IfLoc,
                          bool IsConstexprIf);
+
   StmtResult ParseWildcardPattern(ParsedStmtContext StmtCtx);
   StmtResult ParseIdentifierPattern(ParsedStmtContext StmtCtx);
   StmtResult ParseExpressionPattern(ParsedStmtContext StmtCtx,
                                     bool HasCase = false);
+  StmtResult ParseStructuralBindingPattern(ParsedStmtContext StmtCtx);
+
+  ///
+  /// Structured bindings pattern
+  Sema::ParsedPatEltResult ParsePatternElement(ParsedStmtContext StmtCtx);
+
+  bool ParsePatternList(ParsedStmtContext StmtCtx,
+                        SmallVectorImpl<Sema::ParsedPatEltResult> &ParsedPats,
+                        SourceLocation &RSquare);
 
   StmtResult ParseCaseStatement(ParsedStmtContext StmtCtx,
                                 bool MissingCase = false,

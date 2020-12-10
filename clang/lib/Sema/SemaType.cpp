@@ -3770,6 +3770,7 @@ static QualType GetDeclSpecTypeForDeclarator(TypeProcessingState &state,
     case DeclaratorContext::ForInit:
     case DeclaratorContext::SelectionInit:
     case DeclaratorContext::Condition:
+    case DeclaratorContext::Pattern:
       // FIXME: P0091R3 (erroneously) does not permit class template argument
       // deduction in conditions, for-init-statements, and other declarations
       // that are not simple-declarations.
@@ -3848,6 +3849,7 @@ static QualType GetDeclSpecTypeForDeclarator(TypeProcessingState &state,
       // trailing return types.
       llvm_unreachable("parser should not have allowed this");
       break;
+<<<<<<< HEAD
     case DeclaratorContext::File:
     case DeclaratorContext::Member:
     case DeclaratorContext::Block:
@@ -3855,6 +3857,16 @@ static QualType GetDeclSpecTypeForDeclarator(TypeProcessingState &state,
     case DeclaratorContext::SelectionInit:
     case DeclaratorContext::BlockLiteral:
     case DeclaratorContext::LambdaExpr:
+=======
+    case DeclaratorContext::FileContext:
+    case DeclaratorContext::MemberContext:
+    case DeclaratorContext::BlockContext:
+    case DeclaratorContext::ForContext:
+    case DeclaratorContext::InitStmtContext:
+    case DeclaratorContext::BlockLiteralContext:
+    case DeclaratorContext::LambdaExprContext:
+    case DeclaratorContext::PatternContext:
+>>>>>>> 58bab49c8a39 ([PatternMatching] Add parsing and sema support for Structured Binding Pattern)
       // C++11 [dcl.type]p3:
       //   A type-specifier-seq shall not define a class or enumeration unless
       //   it appears in the type-id of an alias-declaration (7.1.3) that is not
@@ -4951,6 +4963,7 @@ static TypeSourceInfo *GetFullTypeForDeclarator(TypeProcessingState &state,
       complainAboutMissingNullability = CAMN_Yes;
       break;
 
+<<<<<<< HEAD
     case DeclaratorContext::AliasDecl:
     case DeclaratorContext::AliasTemplate:
     case DeclaratorContext::Block:
@@ -4970,6 +4983,27 @@ static TypeSourceInfo *GetFullTypeForDeclarator(TypeProcessingState &state,
     case DeclaratorContext::FunctionalCast:
     case DeclaratorContext::RequiresExpr:
     case DeclaratorContext::Association:
+=======
+    case DeclaratorContext::AliasDeclContext:
+    case DeclaratorContext::AliasTemplateContext:
+    case DeclaratorContext::BlockContext:
+    case DeclaratorContext::BlockLiteralContext:
+    case DeclaratorContext::ConditionContext:
+    case DeclaratorContext::CXXCatchContext:
+    case DeclaratorContext::CXXNewContext:
+    case DeclaratorContext::ForContext:
+    case DeclaratorContext::InitStmtContext:
+    case DeclaratorContext::LambdaExprContext:
+    case DeclaratorContext::LambdaExprParameterContext:
+    case DeclaratorContext::ObjCCatchContext:
+    case DeclaratorContext::TemplateParamContext:
+    case DeclaratorContext::TemplateArgContext:
+    case DeclaratorContext::TemplateTypeArgContext:
+    case DeclaratorContext::TypeNameContext:
+    case DeclaratorContext::FunctionalCastContext:
+    case DeclaratorContext::RequiresExprContext:
+    case DeclaratorContext::PatternContext:
+>>>>>>> 58bab49c8a39 ([PatternMatching] Add parsing and sema support for Structured Binding Pattern)
       // Don't infer in these contexts.
       break;
     }
@@ -6060,6 +6094,7 @@ static TypeSourceInfo *GetFullTypeForDeclarator(TypeProcessingState &state,
                  : diag::ext_variadic_templates);
       break;
 
+<<<<<<< HEAD
     case DeclaratorContext::File:
     case DeclaratorContext::KNRTypeList:
     case DeclaratorContext::ObjCParameter: // FIXME: special diagnostic here?
@@ -6084,6 +6119,34 @@ static TypeSourceInfo *GetFullTypeForDeclarator(TypeProcessingState &state,
     case DeclaratorContext::TemplateArg:
     case DeclaratorContext::TemplateTypeArg:
     case DeclaratorContext::Association:
+=======
+    case DeclaratorContext::FileContext:
+    case DeclaratorContext::KNRTypeListContext:
+    case DeclaratorContext::ObjCParameterContext:  // FIXME: special diagnostic
+                                                   // here?
+    case DeclaratorContext::ObjCResultContext:     // FIXME: special diagnostic
+                                                   // here?
+    case DeclaratorContext::TypeNameContext:
+    case DeclaratorContext::FunctionalCastContext:
+    case DeclaratorContext::CXXNewContext:
+    case DeclaratorContext::AliasDeclContext:
+    case DeclaratorContext::AliasTemplateContext:
+    case DeclaratorContext::MemberContext:
+    case DeclaratorContext::BlockContext:
+    case DeclaratorContext::ForContext:
+    case DeclaratorContext::InitStmtContext:
+    case DeclaratorContext::ConditionContext:
+    case DeclaratorContext::CXXCatchContext:
+    case DeclaratorContext::ObjCCatchContext:
+    case DeclaratorContext::BlockLiteralContext:
+    case DeclaratorContext::LambdaExprContext:
+    case DeclaratorContext::ConversionIdContext:
+    case DeclaratorContext::TrailingReturnContext:
+    case DeclaratorContext::TrailingReturnVarContext:
+    case DeclaratorContext::TemplateArgContext:
+    case DeclaratorContext::TemplateTypeArgContext:
+    case DeclaratorContext::PatternContext:
+>>>>>>> 58bab49c8a39 ([PatternMatching] Add parsing and sema support for Structured Binding Pattern)
       // FIXME: We may want to allow parameter packs in block-literal contexts
       // in the future.
       S.Diag(D.getEllipsisLoc(),

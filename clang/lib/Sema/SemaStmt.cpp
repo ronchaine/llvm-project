@@ -566,30 +566,8 @@ Sema::ActOnDefaultStmt(SourceLocation DefaultLoc, SourceLocation ColonLoc,
   return DS;
 }
 
-StmtResult Sema::ActOnWildcardPattern(SourceLocation WildcardLoc,
-                                      SourceLocation ColonLoc, Stmt *SubStmt,
-                                      Expr *PatternGuard,
-                                      bool ExcludedFromTypeDeduction) {
-
-  if (getCurFunction()->InspectStack.empty())
-    return StmtError();
-
-  auto *WPS = WildcardPatternStmt::Create(
-      Context, WildcardLoc, ColonLoc, PatternGuard, ExcludedFromTypeDeduction);
-  WPS->setSubStmt(SubStmt);
-  getCurFunction()->InspectStack.back().getPointer()->addPattern(WPS);
-  return WPS;
-}
-
-StmtResult Sema::ActOnIdentifierPattern(SourceLocation IdentifierLoc,
-                                        SourceLocation ColonLoc,
-                                        IdentifierInfo *II, Stmt *SubStmt,
-                                        Expr *PatternGuard,
-                                        bool ExcludedFromTypeDeduction) {
-  if (getCurFunction()->InspectStack.empty())
-    return StmtError();
-  InspectExpr *Inspect = getCurFunction()->InspectStack.back().getPointer();
-
+StmtResult Sema::CreatePatternIdBindingVar(Expr *From, IdentifierInfo *II,
+                                           SourceLocation IdentifierLoc) {
   // Bind the identifier under II to the lvalue condition. Consider
   //
   // int v = /* ... */;
@@ -620,8 +598,7 @@ StmtResult Sema::ActOnIdentifierPattern(SourceLocation IdentifierLoc,
   // Deduce the type of the inspect condition.
   QualType DeducedType = deduceVarTypeFromInitializer(
       /*VarDecl*/ nullptr, DeclarationName(II), DeductType, TSI,
-      SourceRange(IdentifierLoc, IdentifierLoc), /*IsDirectInit*/ false,
-      Inspect->getCond());
+      SourceRange(IdentifierLoc, IdentifierLoc), /*IsDirectInit*/ false, From);
   if (DeducedType.isNull())
     return StmtError();
 
@@ -634,10 +611,39 @@ StmtResult Sema::ActOnIdentifierPattern(SourceLocation IdentifierLoc,
   NewVD->setReferenced(true);
   NewVD->setInitStyle(VarDecl::InitializationStyle::CInit);
   NewVD->markUsed(Context);
-  NewVD->setInit(Inspect->getCond());
+  NewVD->setInit(From);
   PushOnScopeChains(NewVD, CurScope, /*AddToContext*/ true);
-  auto NewVDStmt =
-        ActOnDeclStmt(ConvertDeclToDeclGroup(NewVD), ColonLoc, ColonLoc);
+  StmtResult NewVDStmt = ActOnDeclStmt(ConvertDeclToDeclGroup(NewVD),
+                                       IdentifierLoc, IdentifierLoc);
+  return NewVDStmt;
+}
+
+StmtResult Sema::ActOnWildcardPattern(SourceLocation WildcardLoc,
+                                      SourceLocation ColonLoc, Stmt *SubStmt,
+                                      Expr *PatternGuard,
+                                      bool ExcludedFromTypeDeduction) {
+
+  if (getCurFunction()->InspectStack.empty())
+    return StmtError();
+
+  auto *WPS = WildcardPatternStmt::Create(
+      Context, WildcardLoc, ColonLoc, PatternGuard, ExcludedFromTypeDeduction);
+  WPS->setSubStmt(SubStmt);
+  getCurFunction()->InspectStack.back().getPointer()->addPattern(WPS);
+  return WPS;
+}
+
+StmtResult Sema::ActOnIdentifierPattern(SourceLocation IdentifierLoc,
+                                        SourceLocation ColonLoc,
+                                        IdentifierInfo *II, Stmt *SubStmt,
+                                        Expr *PatternGuard,
+                                        bool ExcludedFromTypeDeduction) {
+  if (getCurFunction()->InspectStack.empty())
+    return StmtError();
+  InspectExpr *Inspect = getCurFunction()->InspectStack.back().getPointer();
+
+  StmtResult NewVDStmt =
+      CreatePatternIdBindingVar(Inspect->getCond(), II, IdentifierLoc);
 
   auto *IPS =
       IdentifierPatternStmt::Create(Context, IdentifierLoc, ColonLoc,
@@ -651,6 +657,13 @@ StmtResult Sema::ActOnIdentifierPattern(SourceLocation IdentifierLoc,
 
 ExprResult Sema::CheckPatternConstantExpr(Expr *MatchExpr,
                                           SourceLocation MatchExprLoc) {
+  ExprResult ER = ActOnFinishFullExpr(MatchExpr, MatchExpr->getExprLoc(),
+                                      /*DiscardedValue*/ false,
+                                      /*IsConstexpr*/ true);
+  if (ER.isInvalid())
+    return ExprError();
+  MatchExpr = ER.get();
+
   // FIXME: handle dependent types
   // FIXME: support user defined literals.
   if (isa<StringLiteral>(MatchExpr) || isa<CXXBoolLiteralExpr>(MatchExpr) ||
@@ -664,7 +677,6 @@ ExprResult Sema::CheckPatternConstantExpr(Expr *MatchExpr,
   SmallVector<PartialDiagnosticAt, 8> Notes;
   Expr::EvalResult Eval;
   Eval.Diag = &Notes;
-  ExprResult ER;
 
   // The expression can't be folded, nothing else to try here.
   if (!MatchExpr->EvaluateAsRValue(Eval, Context, false))
@@ -693,6 +705,14 @@ ExprResult Sema::CheckPatternConstantExpr(Expr *MatchExpr,
   return ER;
 }
 
+ExprResult Sema::ActOnMatchBinOp(Expr *LHS, Expr *RHS,
+                                 SourceLocation MatchExprLoc) {
+  // FIXME: implement e.match(v) and match(e, v) as in p1371r3, section 5.3.1.3
+  ExprResult MatchCond = ActOnBinOp(getCurScope(), MatchExprLoc,
+                                    tok::TokenKind::equalequal, LHS, RHS);
+  return MatchCond;
+}
+
 StmtResult Sema::ActOnExpressionPattern(SourceLocation MatchExprLoc,
                                         SourceLocation ColonLoc,
                                         Expr *MatchExpr, Stmt *SubStmt,
@@ -701,18 +721,11 @@ StmtResult Sema::ActOnExpressionPattern(SourceLocation MatchExprLoc,
 
   if (getCurFunction()->InspectStack.empty() || !MatchExpr)
     return StmtError();
+
   InspectExpr *Inspect = getCurFunction()->InspectStack.back().getPointer();
-  ExprResult ER = ActOnFinishFullExpr(MatchExpr, MatchExpr->getExprLoc(),
-                                      /*DiscardedValue*/ false,
-                                      /*IsConstexpr*/ true);
-
-  if (!ER.isInvalid())
-    ER = CheckPatternConstantExpr(MatchExpr, MatchExprLoc);
-
-  // FIXME: implement e.match(v) and match(e, v) as in p1371r3, section 5.3.1.3
-  ExprResult MatchCond =
-      ActOnBinOp(getCurScope(), MatchExprLoc, tok::TokenKind::equalequal,
-                 Inspect->getCond(), ER.isInvalid() ? MatchExpr : ER.get());
+  ExprResult ER = CheckPatternConstantExpr(MatchExpr, MatchExprLoc);
+  ExprResult MatchCond = ActOnMatchBinOp(
+      Inspect->getCond(), ER.isInvalid() ? MatchExpr : ER.get(), MatchExprLoc);
 
   auto *EPS = ExpressionPatternStmt::Create(
       Context, MatchExprLoc, ColonLoc, PatternGuard, ExcludedFromTypeDeduction);
@@ -721,6 +734,135 @@ StmtResult Sema::ActOnExpressionPattern(SourceLocation MatchExprLoc,
   EPS->setHasCase(HasCase);
   Inspect->addPattern(EPS);
   return EPS;
+}
+
+StmtResult Sema::ActOnStructuredBindingPattern(
+    SourceLocation ColonLoc, SourceLocation LLoc, SourceLocation RLoc,
+    SmallVectorImpl<Sema::ParsedPatEltResult> &PatList, Stmt *SubStmt,
+    Expr *Guard, bool ExcludedFromTypeDeduction) {
+  if (PatList.empty()) {
+    Diag(LLoc, diag::err_empty_stbind_pattern);
+    return StmtError();
+  }
+
+  if (getCurFunction()->InspectStack.empty())
+    return StmtError();
+  unsigned &InspectPatCount = getCurFunction()->InspectPatCount;
+  InspectExpr *Inspect = getCurFunction()->InspectStack.back().getPointer();
+  Expr *MatchSource = Inspect->getCond()->IgnoreImpCasts();
+
+  // There are two steps here:
+  //  1. Decompose the inspect condition into implicit structural
+  //     binding elements.
+  //  2. Check each pattern with the respective binding element
+  //     from matching source.
+
+  // Decompose the inspect condition:
+  //    inspect(p)
+  // into:
+  //    auto &&[__p0, __p1, ..., __pN] = p;
+  QualType DeductType = Context.getAutoDeductType();
+  TypeLocBuilder TLB;
+  AutoTypeLoc TL = TLB.push<AutoTypeLoc>(DeductType);
+  TL.setNameLoc(LLoc);
+  DeductType = BuildReferenceType(DeductType, false /*LValueRef*/,
+                                  SourceLocation(), DeclarationName());
+  assert(!DeductType.isNull() && "can't build reference to auto");
+  TLB.push<ReferenceTypeLoc>(DeductType).setSigilLoc(LLoc);
+  TypeSourceInfo *TSI = TLB.getTypeSourceInfo(Context, DeductType);
+
+  // Build the BindingDecls.
+  SmallVector<BindingDecl *, 8> Bindings;
+  DeclContext *const DC = CurContext;
+  SourceLocation MatchSourceLoc = MatchSource->getExprLoc();
+
+  // Populate each binding with a placeholder and a implicit created
+  // reserved identifier. FIXME: should we allow BindingDecl::Create
+  // to have a version without a named identifier?
+  for (unsigned I = 0, E = PatList.size(); I != E; ++I) {
+    SmallString<64> Name;
+    llvm::raw_svector_ostream Stream(Name);
+    Stream << "__pat_" << InspectPatCount << "_" << I;
+
+    IdentifierInfo *EltII = &Context.Idents.get(Stream.str());
+    auto *BD = BindingDecl::Create(Context, DC, MatchSourceLoc, EltII);
+    PushOnScopeChains(BD, CurScope, true /*AddToContext*/);
+    Bindings.push_back(BD);
+  }
+  InspectPatCount++;
+
+  DecompositionDecl *NewVD = DecompositionDecl::Create(
+      Context, DC, MatchSourceLoc, MatchSourceLoc, DeductType, TSI,
+      StorageClass::SC_None, Bindings);
+
+  // Deduce the type of the inspect condition.
+  QualType DeducedType = deduceVarTypeFromInitializer(
+      /*VarDecl*/ NewVD, DeclarationName(), DeductType, TSI, SourceRange(LLoc),
+      /*IsDirectInit*/ false, MatchSource);
+  if (DeducedType.isNull()) // deduceVarTypeFromInitializer already emits diags
+    return StmtError();
+
+  // Set the lexical context. If the declarator has a C++ scope specifier, the
+  // lexical context will be different from the semantic context.
+  NewVD->setType(DeducedType);
+  NewVD->setLexicalDeclContext(CurContext);
+  CurScope->AddDecl(NewVD);
+  CurContext->addHiddenDecl(NewVD);
+
+  // The initialization attempt will also check that the number of
+  // elements between patterns and bindings will match.
+  // FIXME: if designated initializers we need another way to figure out
+  // the proper number of elements.
+  AddInitializerToDecl(NewVD, MatchSource, /*DirectInit=*/false);
+  if (NewVD->isInvalidDecl()) {
+    // FIXME: this could be better, this is not the only type of error that
+    // might come out of AddInitializerToDecl.
+    Diag(LLoc, diag::note_stbind_decomposed_elements);
+    return StmtError();
+  }
+
+  // Now that we got all bindings populated with the proper type, for each
+  // element in the pattern list try to match() with the equivalent element
+  // in the decomposed inspect condition.
+  //
+  // Note that we skip the binding in favor of its underlying type. Doing this
+  // allows for better diagnostics instead of implicit reserved names.
+  ArrayRef<BindingDecl *> NewBindings = NewVD->bindings();
+  SmallVector<Stmt *, 16> Stmts;
+
+  for (int I = 0, E = PatList.size(); I != E; ++I) {
+    Expr *Elt = NewBindings[I]->getBinding();
+
+    switch (PatList[I].Action) {
+    case ParsedPatEltAction::Bind: {
+      StmtResult NewVDStmt =
+          CreatePatternIdBindingVar(Elt, PatList[I].II, PatList[I].Loc);
+      if (NewVDStmt.isInvalid())
+        continue;
+      Stmts.push_back(NewVDStmt.get());
+      break;
+    }
+    case ParsedPatEltAction::Match: {
+      ExprResult M =
+          ActOnMatchBinOp(Elt, cast<Expr>(PatList[I].Elt), MatchSourceLoc);
+      if (M.isInvalid())
+        continue;
+      Stmts.push_back(M.get());
+      break;
+    }
+    case ParsedPatEltAction::Ignore:
+      continue;
+    case ParsedPatEltAction::Unknown:
+      llvm_unreachable("Parsing issues shall not get here");
+    }
+  }
+
+  auto *SBP = StructuredBindingPatternStmt::Create(
+      Context, LLoc, ColonLoc, LLoc, RLoc, Stmts, SubStmt, Guard,
+      ExcludedFromTypeDeduction);
+
+  Inspect->addPattern(SBP);
+  return SBP;
 }
 
 StmtResult

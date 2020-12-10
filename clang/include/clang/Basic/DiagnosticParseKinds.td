@@ -258,8 +258,12 @@ def err_expected_lbrace_in_compound_literal : Error<
   "expected '{' in compound literal">;
 def err_expected_while : Error<"expected 'while' in do/while loop">;
 
+// pattern matching
 def err_expected_equalarrow_after : Error<"expected '=>' after %0">;
 def err_expected_constantexpr : Error<"expected constant-expression">;
+def err_expected_id_or_literal : Error<"expected identifier or literal">;
+def err_expected_patlist_comma_or_rsquare : Error<
+  "expected ',' or ']' in pattern list">;
 
 def err_expected_semi_after_stmt : Error<"expected ';' after %0 statement">;
 def err_expected_semi_after_expr : Error<"expected ';' after expression">;

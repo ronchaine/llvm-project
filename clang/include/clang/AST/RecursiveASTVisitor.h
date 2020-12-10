@@ -2413,6 +2413,7 @@ DEF_TRAVERSE_STMT(InspectExpr, {})
 DEF_TRAVERSE_STMT(WildcardPatternStmt, {})
 DEF_TRAVERSE_STMT(IdentifierPatternStmt, {})
 DEF_TRAVERSE_STMT(ExpressionPatternStmt, {})
+DEF_TRAVERSE_STMT(StructuredBindingPatternStmt, {})
 
 DEF_TRAVERSE_STMT(CXXForRangeStmt, {
   if (!getDerived().shouldVisitImplicitCode()) {

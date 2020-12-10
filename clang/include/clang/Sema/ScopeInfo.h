@@ -217,6 +217,11 @@ public:
   /// block.
   SmallVector<InspectInfo, 8> InspectStack;
 
+  /// Track the number of inspect patterns - useful to create names for
+  /// temporary bindings on structural bindings pattern. FIXME: is there a
+  /// better approach?
+  unsigned InspectPatCount = 0;
+
   /// The list of return statements that occur within the function or
   /// block, if there is any chance of applying the named return value
   /// optimization, or if we need to infer a return type.

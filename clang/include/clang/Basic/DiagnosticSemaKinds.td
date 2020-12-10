@@ -8392,6 +8392,10 @@ def err_typecheck_pattern_type_incompatible : Error<
 
 def err_typecheck_no_valid_return_type : Error<
   "no valid type can be deduced for inspect expression">;
+def err_empty_stbind_pattern : Error<
+  "empty structured binding pattern is invalid">;
+def note_stbind_decomposed_elements : Note<
+  "pattern list must match number of decomposed elements">;
 
 def note_incomplete_class_and_qualified_id : Note<
   "conformance of forward class %0 to protocol %1 can not be confirmed">;

@@ -4226,7 +4226,8 @@ ExprResult Parser::ParseInspectExpr() {
   StmtResult Init;
   Sema::ConditionResult Cond;
   if (ParseParenExprOrCondition(&Init, Cond, InspectLoc,
-                                Sema::ConditionKind::Inspect))
+                                Sema::ConditionKind::Inspect) ||
+      Cond.isInvalid())
     return ExprError();
 
   // Parse trailing-return-type[opt].

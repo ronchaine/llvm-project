@@ -11,6 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "clang/AST/StmtCXX.h"
+#include "clang/AST/ExprCXX.h"
 
 #include "clang/AST/ASTContext.h"
 
@@ -179,7 +180,7 @@ ExpressionPatternStmt::Create(const ASTContext &Ctx, SourceLocation CaseLoc,
 
   void *Mem = Ctx.Allocate(
       totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr + HasPatternGuard),
-      alignof(IdentifierPatternStmt));
+      alignof(ExpressionPatternStmt));
   return new (Mem)
       ExpressionPatternStmt(CaseLoc, ColonLoc, nullptr, nullptr, PatternGuard,
                             ExcludedFromTypeDeduction);
@@ -190,6 +191,56 @@ ExpressionPatternStmt::CreateEmpty(const ASTContext &Ctx,
                                    bool HasPatternGuard) {
   void *Mem = Ctx.Allocate(
       totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr + HasPatternGuard),
-      alignof(IdentifierPatternStmt));
+      alignof(ExpressionPatternStmt));
   return new (Mem) ExpressionPatternStmt(EmptyShell(), HasPatternGuard);
+}
+
+void StructuredBindingPatternStmt::setPats(ArrayRef<Stmt *> Stmts) {
+  assert(InspectPatternBits.NumPats == Stmts.size() &&
+         "NumPats doesn't fit in bits of InspectPatternBits.NumPats!");
+
+  std::copy(Stmts.begin(), Stmts.end(), pats_begin());
+}
+
+StructuredBindingPatternStmt::StructuredBindingPatternStmt(
+    SourceLocation PatternLoc, SourceLocation ColonLoc, SourceLocation LLoc,
+    SourceLocation RLoc, ArrayRef<Stmt *> Stmts, Stmt *SubStmt, Expr *Guard,
+    bool ExcludedFromTypeDeduction)
+    : PatternStmt(StructuredBindingPatternStmtClass, PatternLoc, ColonLoc,
+                  ExcludedFromTypeDeduction) {
+  InspectPatternBits.PatternLoc = LLoc;
+  InspectPatternBits.NumPats = Stmts.size();
+  setLSquareLoc(LLoc);
+  setRSquareLoc(RLoc);
+  setSubStmt(SubStmt);
+  InspectPatternBits.PatternStmtHasPatternGuard = false;
+  if (Guard) {
+    InspectPatternBits.PatternStmtHasPatternGuard = true;
+    setPatternGuard(Guard);
+  }
+  setPats(Stmts);
+}
+
+StructuredBindingPatternStmt *StructuredBindingPatternStmt::Create(
+    const ASTContext &Ctx, SourceLocation PatternLoc, SourceLocation ColonLoc,
+    SourceLocation LLoc, SourceLocation RLoc, ArrayRef<Stmt *> Stmts,
+    Stmt *SubStmt, Expr *Guard, bool ExcludedFromTypeDeduction) {
+  bool HasPatternGuard = Guard != nullptr;
+
+  void *Mem =
+      Ctx.Allocate(totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr +
+                                            HasPatternGuard + Stmts.size()),
+                   alignof(StructuredBindingPatternStmt));
+  return new (Mem)
+      StructuredBindingPatternStmt(PatternLoc, ColonLoc, LLoc, RLoc, Stmts,
+                                   SubStmt, Guard, ExcludedFromTypeDeduction);
+}
+
+StructuredBindingPatternStmt *
+StructuredBindingPatternStmt::CreateEmpty(const ASTContext &Ctx,
+                                          bool HasPatternGuard) {
+  void *Mem = Ctx.Allocate(
+      totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr + HasPatternGuard),
+      alignof(StructuredBindingPatternStmt));
+  return new (Mem) StructuredBindingPatternStmt(EmptyShell(), HasPatternGuard);
 }

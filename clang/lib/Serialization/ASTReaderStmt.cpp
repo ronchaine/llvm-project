@@ -331,6 +331,11 @@ void ASTStmtReader::VisitExpressionPatternStmt(ExpressionPatternStmt *S) {
   S->setSubStmt(Record.readSubStmt());
 }
 
+void ASTStmtReader::VisitStructuredBindingPatternStmt(
+    StructuredBindingPatternStmt *S) {
+  assert(0 && "not implemented");
+}
+
 void ASTStmtReader::VisitWhileStmt(WhileStmt *S) {
   VisitStmt(S);
 

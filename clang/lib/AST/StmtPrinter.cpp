@@ -408,6 +408,17 @@ void StmtPrinter::VisitExpressionPatternStmt(ExpressionPatternStmt *Node) {
   PrintStmt(Node->getSubStmt(), 0);
 }
 
+void StmtPrinter::VisitStructuredBindingPatternStmt(
+    StructuredBindingPatternStmt *Node) {
+  Indent();
+  OS << "[...] "; // FIXME: print pattern list?
+  if (Node->getPatternGuard()) {
+    PrintExpr(Node->getPatternGuard());
+  }
+  OS << " =>" << NL;
+  PrintStmt(Node->getSubStmt(), 0);
+}
+
 void StmtPrinter::VisitWhileStmt(WhileStmt *Node) {
   Indent() << "while (";
   if (const DeclStmt *DS = Node->getConditionVariableDeclStmt())

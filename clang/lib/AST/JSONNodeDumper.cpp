@@ -1649,13 +1649,24 @@ void JSONNodeDumper::VisitInspectExpr(const InspectExpr *SS) {
   attributeOnlyIfTrue("hasVar", SS->hasVarStorage());
 }
 
-void JSONNodeDumper::VisitWildcardPatrternStmt(const WildcardPatternStmt *SS) {}
+void JSONNodeDumper::VisitWildcardPatrternStmt(const WildcardPatternStmt *SS) {
+  assert(0 && "not implemented");
+}
 
 void JSONNodeDumper::VisitIdentifierPatternStmt(
-    const IdentifierPatternStmt *SS) {}
+    const IdentifierPatternStmt *SS) {
+  assert(0 && "not implemented");
+}
 
 void JSONNodeDumper::VisitExpressionPatternStmt(
-    const ExpressionPatternStmt *SS) {}
+    const ExpressionPatternStmt *SS) {
+  assert(0 && "not implemented");
+}
+
+void JSONNodeDumper::VisitStructuredBindingPatternStmt(
+    const StructuredBindingPatternStmt *SS) {
+  assert(0 && "not implemented");
+}
 
 void JSONNodeDumper::VisitLabelStmt(const LabelStmt *LS) {
   JOS.attribute("name", LS->getName());

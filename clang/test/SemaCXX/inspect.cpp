@@ -184,3 +184,25 @@ void int_struct(int x) {
                    // expected-note@-1 {{read of non-constexpr variable 's4' is not allowed in a constant expression}}
   };
 }
+
+void stbind0(int x) {
+  struct s {
+    int a;
+    int b;
+  };
+  s cond{1,2};
+  inspect (cond) { // expected-error {{type 's' decomposes into 2 elements, but 3 names were provided}}
+    [1,2,3] =>; // expected-note {{pattern list must match number of decomposed elements}}
+  };
+
+  int array[2] = {2,1};
+  inspect (array) {
+    [1,2] =>;
+  };
+
+  using FourUInts = unsigned __attribute__((__vector_size__(16)));
+  FourUInts four_uints = {1,2,3,4};
+  inspect (four_uints) {
+    [1,2,3,4] =>;
+  };
+}

@@ -255,6 +255,7 @@ public:
   void VisitWildcardPatternStmt(const WildcardPatternStmt *Node);
   void VisitIdentifierPatternStmt(const IdentifierPatternStmt *Node);
   void VisitExpressionPatternStmt(const ExpressionPatternStmt *Node);
+  void VisitStructuredBindingPatternStmt(const StructuredBindingPatternStmt *S);
   void VisitWhileStmt(const WhileStmt *Node);
   void VisitLabelStmt(const LabelStmt *Node);
   void VisitGotoStmt(const GotoStmt *Node);

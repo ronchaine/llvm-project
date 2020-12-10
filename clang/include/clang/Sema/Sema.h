@@ -8810,7 +8810,7 @@ public:
   StmtResult ActOnFinishSwitchStmt(SourceLocation SwitchLoc, Stmt *Switch,
                                    Stmt *Body);
 
-  // P2688 pattern matching patterns
+  /// Pattern matching
   ExprResult CheckInspectCondition(SourceLocation InspectLoc, Expr *Cond);
 
   StmtResult ActOnWildcardPattern(SourceLocation WildcardLoc,
@@ -8826,6 +8826,48 @@ public:
                                     Stmt *SubStmt, Expr *PatternGuard,
                                     bool HasCase,
                                     bool ExcludedFromTypeDeduction);
+
+  // Each element parsed is some sort of pattern and ParsePatternList should
+  // classify each one according to the enum below and allow for the right
+  // action during sema.
+  enum class ParsedPatEltAction {
+    Unknown, // Parsing error.
+    Match,   // Expression is used for matching comparisons.
+    Bind,    // Bind an element to the inspect condition.
+    Ignore   // Wildcard, element always match.
+  };
+
+  // ParsedPatEltResult represents the parsed entity and indicate what
+  // type of action to take once we have full information and a decomposed
+  // inspect condition to compare against. For ParsedPatEltAction::Bind, we
+  // store a IdentifierInfo *, whereas the other ones require a Stmt*. Note
+  // that llvm::PointerIntPair cannot be used here given the bit availability
+  // in the underlying types.
+  struct ParsedPatEltResult {
+    union {
+      Stmt *Elt;
+      IdentifierInfo *II;
+    };
+    SourceLocation Loc;
+    ParsedPatEltAction Action;
+
+    ParsedPatEltResult(Stmt *S, ParsedPatEltAction A) : Action(A) { Elt = S; }
+    ParsedPatEltResult(IdentifierInfo *I, SourceLocation L,
+                       ParsedPatEltAction A)
+        : Loc(L), Action(A) {
+      II = I;
+    }
+  };
+  StmtResult ActOnStructuredBindingPattern(
+      SourceLocation ColonLoc, SourceLocation LLoc, SourceLocation RLoc,
+      SmallVectorImpl<Sema::ParsedPatEltResult> &PatList, Stmt *SubStmt,
+      Expr *Guard, bool ExcludedFromTypeDeduction);
+
+  ExprResult ActOnMatchBinOp(Expr *LHS, Expr *RHS, SourceLocation MatchExprLoc);
+  StmtResult CreatePatternIdBindingVar(Expr *From, IdentifierInfo *II,
+                                       SourceLocation IdentifierLoc);
+
+  class ConditionResult;
   ExprResult CheckPatternConstantExpr(Expr *MatchExpr,
                                       SourceLocation MatchExprLoc);
 

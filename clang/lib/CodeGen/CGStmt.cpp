@@ -116,6 +116,7 @@ void CodeGenFunction::EmitStmt(const Stmt *S, ArrayRef<const Attr *> Attrs) {
   case Stmt::WildcardPatternStmtClass:
   case Stmt::IdentifierPatternStmtClass:
   case Stmt::ExpressionPatternStmtClass:
+  case Stmt::StructuredBindingPatternStmtClass:
     llvm_unreachable("should have emitted these statements as simple");
 
 #define STMT(Type, Base)

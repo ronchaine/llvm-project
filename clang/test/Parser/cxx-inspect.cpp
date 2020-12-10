@@ -161,3 +161,33 @@ void bad_equal_arrow(int x) {
     y if (h != 0) = > {}; // expected-error {{expected '=>' after if}}
   };
 }
+
+void stbind0(int x) {
+  struct s {
+    int a;
+    int b;
+  };
+  s cond{1,2};
+  constexpr int idx = 3;
+  inspect (cond) {
+    [] =>; // expected-error {{empty structured binding pattern is invalid}}
+    [0,] =>; // expected-error {{expected expression}}
+    [0,,] =>; // expected-error {{expected expression}}
+    [0 0] =>; // expected-error {{expected ',' or ']' in pattern list}}
+    [,] =>; // expected-error {{expected expression}}
+    [1,2] =>;
+    [1,idx] =>;
+    id => { id.a++; }
+    [1,new_id] => { new_id++; };
+  };
+
+  struct color_pack {
+    Color c1, c2;
+  };
+  color_pack cp{Red, Blue};
+  inspect (cp) {
+    [case Red, case Green] =>;
+    [Color::Red, Color::Blue] =>;
+    [Green, case Color::Red] =>;
+  };
+}

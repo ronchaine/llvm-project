@@ -310,6 +310,11 @@ void ASTStmtWriter::VisitExpressionPatternStmt(ExpressionPatternStmt *S) {
   Code = serialization::STMT_EXPRESSIONPATTERN;
 }
 
+void ASTStmtWriter::VisitStructuredBindingPatternStmt(
+    StructuredBindingPatternStmt *S) {
+  assert(0 && "not implemented");
+}
+
 void ASTStmtWriter::VisitWhileStmt(WhileStmt *S) {
   VisitStmt(S);
 

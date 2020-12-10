@@ -262,6 +262,9 @@ Retry:
   }
 
   default: {
+    if (Tok.is(tok::l_square) && IsMaybeInspectPattern(getCurScope()))
+      return ParseStructuralBindingPattern(StmtCtx);
+
     bool HaveAttrs = !CXX11Attrs.empty() || !GNUAttrs.empty();
     auto IsStmtAttr = [](ParsedAttr &Attr) { return Attr.isStmtAttr(); };
     bool AllAttrsAreStmtAttrs = llvm::all_of(CXX11Attrs, IsStmtAttr) &&
@@ -865,6 +868,210 @@ bool Parser::ParsePatternGuard(Sema::ConditionResult &Cond,
     return false;
 
   return true;
+}
+
+Sema::ParsedPatEltResult
+Parser::ParsePatternElement(ParsedStmtContext StmtCtx) {
+  bool HasCase = false;
+  if (Tok.is(tok::kw_case)) {
+    HasCase = true;
+    ConsumeToken();
+  }
+
+  SourceLocation MatcherLoc = Tok.getLocation();
+  if (!HasCase && Tok.is(tok::identifier)) {
+    IdentifierInfo *II = Tok.getIdentifierInfo();
+    if (!II) {
+      Diag(MatcherLoc, diag::err_expected_id_or_literal);
+      return Sema::ParsedPatEltResult(II, MatcherLoc,
+                                      Sema::ParsedPatEltAction::Unknown);
+    }
+
+    if (II->getName() == "__") {
+      ConsumeToken();
+      return Sema::ParsedPatEltResult((Stmt *)nullptr,
+                                      Sema::ParsedPatEltAction::Ignore);
+    }
+
+    // If next token isn't ',' or ']', it means we are very likely trying to
+    // parse a dependent name, scoped enum, etc. Otherwise this is an identifier
+    // pattern.
+    if (NextToken().is(tok::comma) || NextToken().is(tok::r_square)) {
+      ConsumeToken(); // skip identifier
+      return Sema::ParsedPatEltResult(II, MatcherLoc,
+                                      Sema::ParsedPatEltAction::Bind);
+    }
+  }
+
+  // This should handle both tok::identifier and literals.
+  ExprResult Matcher = ParseConstantExpression();
+  if (Matcher.isInvalid()) {
+    SkipUntil(tok::r_square, tok::kw_if, tok::equalarrow,
+              StopAtSemi | StopBeforeMatch);
+    return Sema::ParsedPatEltResult((Stmt *)nullptr,
+                                    Sema::ParsedPatEltAction::Unknown);
+  }
+
+  ExprResult Res = Actions.CheckPatternConstantExpr(Matcher.get(), MatcherLoc);
+  return Sema::ParsedPatEltResult(Res.get(), Sema::ParsedPatEltAction::Match);
+}
+
+bool Parser::ParsePatternList(
+    ParsedStmtContext StmtCtx,
+    SmallVectorImpl<Sema::ParsedPatEltResult> &ParsedPats,
+    SourceLocation &RSquare) {
+  assert(Tok.is(tok::l_square) && "Expected '['");
+  BalancedDelimiterTracker T(*this, tok::l_square);
+  T.consumeOpen();
+
+  // Empty list is diagnosed as part of ActOnStructuredBindingPattern
+  if (Tok.is(tok::r_square)) {
+    T.consumeClose();
+    return true;
+  }
+
+  bool Valid = true;
+  unsigned EltIdx = 0;
+
+  while (1) {
+    // Parse: pattern-list
+    // TODO: reuse MayBeDesignationStart() for designated recognition
+    Sema::ParsedPatEltResult Elt = ParsePatternElement(StmtCtx);
+    EltIdx++;
+    if (Elt.Action != Sema::ParsedPatEltAction::Unknown)
+      ParsedPats.push_back(Elt);
+    else {
+      Valid = false;
+      if (Tok.isNot(tok::comma)) {
+        SkipUntil(tok::r_square, tok::kw_if, tok::equalarrow,
+                  StopAtSemi | StopBeforeMatch);
+        break;
+      }
+    }
+
+    if (Tok.is(tok::r_square)) {
+      RSquare = Tok.getLocation();
+      break;
+    }
+
+    // If we don't have a comma next, we're done.
+    if (Tok.isNot(tok::comma)) {
+      Valid = false;
+      Diag(Tok, diag::err_expected_patlist_comma_or_rsquare);
+      SkipUntil(tok::r_square, tok::kw_if, tok::equalarrow,
+                StopAtSemi | StopBeforeMatch);
+      break;
+    }
+
+    // Handle trailing comma.
+    ConsumeToken();
+  }
+
+  return !T.consumeClose() && Valid;
+}
+
+/// Inspect condition is decomposed similar to identifier patterns but (a)
+/// decomposed from the inspect condiftion instead.
+///
+/// structural-binding-pattern:
+///       [ pattern-list ] '=>' ...
+///
+///     std::pair<int, int> p = /* ... */;
+///     int x = inspect (p) -> int {
+///       [0, 0] => 42;
+///       [0, y] => y+100;
+///       ...
+///     };
+///
+/// is semantically equivalent to:
+///
+///     int compute_x() {
+///       auto &&[__p0, __p1] = p;
+///       if (__po == 0 && __p1 == 0)
+///         return 42;
+///       {
+///         auto &y = __p1;
+///         if (__p0 == 0)
+///           return 100;
+///       }
+///       ...
+///     }
+///
+/// TODO: nested structured bindings, dot-syntax, etc.
+///
+StmtResult Parser::ParseStructuralBindingPattern(ParsedStmtContext StmtCtx) {
+  assert(Tok.is(tok::l_square) && "Not a structural binding pattern!");
+  assert(getCurScope()->isInspectScope() &&
+         "Identifier pattern should be in inspect scope");
+  SourceLocation LSquare = Tok.getLocation();
+
+  // Structural binding pattern:
+  //
+  //   [pat0, pat1, ... ] pattern-guard[opt] '=>' statement
+  //   ^
+  SmallVector<Sema::ParsedPatEltResult, 16> PatList;
+  SourceLocation RSquare;
+  bool ValidPatList = ParsePatternList(StmtCtx, PatList, RSquare);
+
+  // Handle pattern-guard[opt]
+  Sema::ConditionResult Cond;
+  SourceLocation IfLoc;
+
+  ParseScope PatternScope(this, Scope::PatternScope | Scope::DeclScope, true);
+
+  // FIXME: retrieve constexpr information from InspectExpr
+  if (Tok.is(tok::kw_if))
+    if (!ParsePatternGuard(Cond, IfLoc, false /*IsConstexprIf*/))
+      return StmtError();
+
+  if (!Tok.is(tok::equalarrow)) {
+    Diag(Tok, diag::err_expected_equalarrow_after)
+        << (IfLoc.isInvalid() ? "pattern list" : "if");
+    // Extra consume for error recovery when typo for equalarrow "= >"
+    // TODO: add a fix-it for '=>'
+    if (Tok.is(tok::equal) && NextToken().is(tok::greater))
+      ConsumeToken();
+  }
+  SourceLocation ArrowLoc = ConsumeToken();
+
+  // Parse whether this pattern contributes to
+  // return type deduction
+  SourceLocation ExclaimLoc;
+  if (Tok.is(tok::exclaim)) {
+    ExclaimLoc = ConsumeToken();
+
+    if (!Tok.is(tok::l_brace)) {
+      Diag(Tok, diag::err_expected_lbrace_after) << "!";
+      SkipUntil(tok::semi);
+      return StmtError();
+    }
+  }
+
+  StmtResult Res = StmtError();
+  if (ValidPatList)
+    Res = Actions.ActOnStructuredBindingPattern(
+        ArrowLoc, LSquare, RSquare, PatList, nullptr, Cond.get().second,
+        ExclaimLoc.isValid());
+
+  // Parse the statement
+  //
+  // [pat0, pat1, ... ] pattern-guard[opt] '=>' expression
+  //                                            { ... } (implies void)
+  //                                            ^
+  StmtResult SubStmt = ParseStatement(nullptr, StmtCtx);
+
+  // Broken substmt shouldn't prevent the identifier from being added to the
+  // AST.
+  if (SubStmt.isInvalid())
+    SubStmt = Actions.ActOnNullStmt(ArrowLoc);
+
+  if (!Res.isInvalid()) {
+    auto *SBP = dyn_cast<StructuredBindingPatternStmt>(Res.get());
+    SBP->setSubStmt(SubStmt.get());
+  }
+
+  PatternScope.Exit();
+  return Res;
 }
 
 /// ParseWildcardPattern - We have a '__' wildcard that matches any

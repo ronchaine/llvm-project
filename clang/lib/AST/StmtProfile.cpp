@@ -307,6 +307,11 @@ void StmtProfiler::VisitExpressionPatternStmt(const ExpressionPatternStmt *S) {
   VisitStmt(S);
 }
 
+void StmtProfiler::VisitStructuredBindingPatternStmt(
+    const StructuredBindingPatternStmt *S) {
+  assert(0 && "not implemented");
+}
+
 void StmtProfiler::VisitWhileStmt(const WhileStmt *S) {
   VisitStmt(S);
   VisitDecl(S->getConditionVariable());
