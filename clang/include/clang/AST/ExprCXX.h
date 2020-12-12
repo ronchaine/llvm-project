@@ -2037,7 +2037,7 @@ public:
   /// The inspect expression must have storage for it.
   void setConditionVariable(const ASTContext &Ctx, VarDecl *VD);
 
-  /// If this SwitchStmt has a condition variable, return the faux DeclStmt
+  /// If this InspectExpr has a condition variable, return the faux DeclStmt
   /// associated with the creation of that condition variable.
   DeclStmt *getConditionVariableDeclStmt() {
     return hasVarStorage() ? static_cast<DeclStmt *>(
