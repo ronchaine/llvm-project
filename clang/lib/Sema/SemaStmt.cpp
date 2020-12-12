@@ -791,30 +791,30 @@ StmtResult Sema::ActOnStructuredBindingPattern(
   }
   InspectPatCount++;
 
-  DecompositionDecl *NewVD = DecompositionDecl::Create(
+  DecompositionDecl *DecompCond = DecompositionDecl::Create(
       Context, DC, MatchSourceLoc, MatchSourceLoc, DeductType, TSI,
       StorageClass::SC_None, Bindings);
 
   // Deduce the type of the inspect condition.
   QualType DeducedType = deduceVarTypeFromInitializer(
-      /*VarDecl*/ NewVD, DeclarationName(), DeductType, TSI, SourceRange(LLoc),
+      /*VarDecl*/ DecompCond, DeclarationName(), DeductType, TSI, SourceRange(LLoc),
       /*IsDirectInit*/ false, MatchSource);
   if (DeducedType.isNull()) // deduceVarTypeFromInitializer already emits diags
     return StmtError();
 
   // Set the lexical context. If the declarator has a C++ scope specifier, the
   // lexical context will be different from the semantic context.
-  NewVD->setType(DeducedType);
-  NewVD->setLexicalDeclContext(CurContext);
-  CurScope->AddDecl(NewVD);
-  CurContext->addHiddenDecl(NewVD);
+  DecompCond->setType(DeducedType);
+  DecompCond->setLexicalDeclContext(CurContext);
+  CurScope->AddDecl(DecompCond);
+  CurContext->addHiddenDecl(DecompCond);
 
   // The initialization attempt will also check that the number of
   // elements between patterns and bindings will match.
   // FIXME: if designated initializers we need another way to figure out
   // the proper number of elements.
-  AddInitializerToDecl(NewVD, MatchSource, /*DirectInit=*/false);
-  if (NewVD->isInvalidDecl()) {
+  AddInitializerToDecl(DecompCond, MatchSource, /*DirectInit=*/false);
+  if (DecompCond->isInvalidDecl()) {
     // FIXME: this could be better, this is not the only type of error that
     // might come out of AddInitializerToDecl.
     Diag(LLoc, diag::note_stbind_decomposed_elements);
@@ -822,24 +822,29 @@ StmtResult Sema::ActOnStructuredBindingPattern(
   }
 
   // Now that we got all bindings populated with the proper type, for each
-  // element in the pattern list try to match() with the equivalent element
-  // in the decomposed inspect condition.
+  // element in the pattern list try to ==/match() with the equivalent element
+  // in the decomposed inspect condition. Build a BO_LAnd chain on top of those
+  // results into PatCond. Note that instead, we could have just emitted a list
+  // of matching expressions and let codegen implement it with a chain of 'and's,
+  // but this will require all conditions to be evaluated and we wanna be able
+  // to shortcut matching a pattern as soon as we see a false condition.
   //
-  // Note that we skip the binding in favor of its underlying type. Doing this
+  // We skip using the binding in favor of its underlying type. Doing this
   // allows for better diagnostics instead of implicit reserved names.
-  ArrayRef<BindingDecl *> NewBindings = NewVD->bindings();
-  SmallVector<Stmt *, 16> Stmts;
+  ArrayRef<BindingDecl *> NewBindings = DecompCond->bindings();
+  SmallVector<Stmt *, 16> VarDecls;
+  Expr *PatCond = nullptr;
 
   for (int I = 0, E = PatList.size(); I != E; ++I) {
     Expr *Elt = NewBindings[I]->getBinding();
 
     switch (PatList[I].Action) {
     case ParsedPatEltAction::Bind: {
-      StmtResult NewVDStmt =
+      StmtResult DecompCondStmt =
           CreatePatternIdBindingVar(Elt, PatList[I].II, PatList[I].Loc);
-      if (NewVDStmt.isInvalid())
+      if (DecompCondStmt.isInvalid())
         continue;
-      Stmts.push_back(NewVDStmt.get());
+      VarDecls.push_back(DecompCondStmt.get());
       break;
     }
     case ParsedPatEltAction::Match: {
@@ -847,7 +852,17 @@ StmtResult Sema::ActOnStructuredBindingPattern(
           ActOnMatchBinOp(Elt, cast<Expr>(PatList[I].Elt), MatchSourceLoc);
       if (M.isInvalid())
         continue;
-      Stmts.push_back(M.get());
+      if (!PatCond) {
+        PatCond = M.get();
+        continue;
+      }
+
+      Expr *NextOp = M.get();
+      ExprResult NextLAnd =
+          CreateBuiltinBinOp(NextOp->getExprLoc(), BO_LAnd, PatCond, NextOp);
+      if (NextLAnd.isInvalid())
+        continue;
+      PatCond = NextLAnd.get();
       break;
     }
     case ParsedPatEltAction::Ignore:
@@ -858,7 +873,7 @@ StmtResult Sema::ActOnStructuredBindingPattern(
   }
 
   auto *SBP = StructuredBindingPatternStmt::Create(
-      Context, LLoc, ColonLoc, LLoc, RLoc, Stmts, SubStmt, Guard,
+      Context, LLoc, ColonLoc, LLoc, RLoc, DecompCond, SubStmt, Guard, PatCond, VarDecls,
       ExcludedFromTypeDeduction);
 
   Inspect->addPattern(SBP);

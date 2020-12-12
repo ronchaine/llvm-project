@@ -495,6 +495,9 @@ bool CodeGenFunction::EmitSimpleStmt(const Stmt *S,
   case Stmt::ExpressionPatternStmtClass:
     EmitExpressionPatternStmt(cast<ExpressionPatternStmt>(*S));
     break;
+  case Stmt::StructuredBindingPatternStmtClass:
+    EmitStructuredBindingPatternStmt(cast<StructuredBindingPatternStmt>(*S));
+    break;
   }
   return true;
 }
@@ -2208,6 +2211,8 @@ static const char *GetPatternName(const PatternStmt *S) {
     return "pat.id";
   if (const auto *EPS = dyn_cast<ExpressionPatternStmt>(S))
     return "pat.exp";
+  if (const auto *EPS = dyn_cast<StructuredBindingPatternStmt>(S))
+    return "pat.stbind";
   llvm_unreachable("unexpected pattern type");
 }
 
@@ -2333,6 +2338,50 @@ void CodeGenFunction::EmitExpressionPatternStmt(
   // Emit code to handle the condition for the matching expression.
   EmitBranchOnBoolExpr(cast<Expr>(S.getMatchCond()), MatchCondNextBB,
                        NextPattern, getProfileCount(S.getMatchCond()));
+
+  // Do the proper handling in the presence of a pattern guard.
+  if (S.hasPatternGuard()) {
+    EmitBlock(MatchCondNextBB);
+    EmitBranchOnBoolExpr(S.getPatternGuard(), PatBodyBB, NextPattern,
+                         getProfileCount(S.getSubStmt()));
+  }
+  EmitBlock(PatBodyBB);
+
+  // Emit the pattern body
+  EmitPatternStmtBody(S);
+}
+
+void CodeGenFunction::EmitStructuredBindingPatternStmt(
+    const StructuredBindingPatternStmt &S) {
+  // Unless this is the last pattern in the inspect statement, create a new
+  // basic block placeholder for the next pattern to be able to point to it.
+  auto *ThisPattern = InspectCtx.NextPattern;
+  auto *NextPattern = S.getNextPattern()
+                          ? createBasicBlock(GetPatternName(S.getNextPattern()))
+                          : InspectCtx.InspectExit;
+  auto *PatBodyBB = createBasicBlock("patbody");
+  auto *MatchCondNextBB =
+      S.hasPatternGuard() ? createBasicBlock("patguard") : PatBodyBB;
+  InspectCtx.NextPattern = NextPattern;
+
+  // Emit code for the current pattern test.
+  EmitBlock(ThisPattern);
+
+  // Handle the condition's decomposition
+  auto *Decomp = S.getDecompDecl();
+  const VarDecl &VD = cast<VarDecl>(*Decomp);
+  EmitVarDecl(VD);
+  for (auto *B : Decomp->bindings())
+    if (auto *HD = B->getHoldingVar())
+      EmitVarDecl(*HD);
+
+  // Emit code for all variable decls coming from identifier pattern elements.
+  for (auto &VarDecl : S.vardecls())
+    EmitStmt(VarDecl);
+
+  // Emit code to handle the condition for the matching expression.
+  EmitBranchOnBoolExpr(cast<Expr>(S.getPatCond()), MatchCondNextBB, NextPattern,
+                       getProfileCount(S.getPatCond()));
 
   // Do the proper handling in the presence of a pattern guard.
   if (S.hasPatternGuard()) {

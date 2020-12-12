@@ -3377,6 +3377,7 @@ public:
   void EmitWildcardPatternStmt(const WildcardPatternStmt &S);
   void EmitIdentifierPatternStmt(const IdentifierPatternStmt &S);
   void EmitExpressionPatternStmt(const ExpressionPatternStmt &S);
+  void EmitStructuredBindingPatternStmt(const StructuredBindingPatternStmt &S);
 
   void EmitAsmStmt(const AsmStmt &S);
 

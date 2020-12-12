@@ -67,6 +67,7 @@ class SourceManager;
 class StringLiteral;
 class Token;
 class VarDecl;
+class DecompositionDecl;
 enum class CharacterLiteralKind;
 enum class ConstantResultStorageKind;
 enum class CXXConstructionKind;
@@ -1231,10 +1232,13 @@ protected:
     /// for the overall inspect expression
     unsigned SkipTypeDeduction : 1;
 
-    /// For StructuredBindingPatternStmt, it tracks the
-    /// number of patterns contained in the stmt. Note
-    /// that this should change if any new field is added
-    unsigned NumPats : 32 - (NumStmtBits + 1 + 1 + 1);
+    /// StructuredBindingPatternStmt only
+
+    /// Unified condition considering all matchers in the pattern
+    /// list. Usually a chain of '&&' on equality checks.
+    unsigned HasPatCond : 1;
+    /// Tracks all new variables from identifier pattern elelemtns.
+    unsigned NumVarDecls : 32 - (NumStmtBits + 1 + 1 + 1 + 1);
 
     /// The location of the '__' wildcard, identifier,
     /// constant expression or pattern list.
@@ -4482,48 +4486,61 @@ class StructuredBindingPatternStmt final
   //
   // * A "Stmt *" for the substatement of the pattern statement. Always present.
   //
-  // * A "Stmt *" for the condition.
+  // * A "Stmt *" for the pattern guard condition.
   //    Present if and only if hasPatternGuard(). This is in fact a "Expr *".
   //
-  // * A list of "Stmt *" to build the pattern condition from.
+  // * A "Stmt *" representing the root of a && chain between all patterns
+  //    that contribute to matching and form the overall pattern condition.
+  //    Present only if there are any conditions.
   //
-  enum { SubStmtOffset = 0 };
-  enum { NumMandatoryStmtPtr = 1 };
+  // * A list of "Stmt *" representing all pattern elements introducing a
+  //    identifier, if any.
+  //
+  enum { SubStmtOffset = 0, DecompDeclOffset = 1 };
+  enum { NumMandatoryStmtPtr = 2 };
 
   unsigned subStmtOffset() const { return SubStmtOffset; }
+  unsigned decompDeclOffset() const { return DecompDeclOffset; }
+
   unsigned patternGuardOffset() const { return hasPatternGuard(); }
-  unsigned patsOffset() const {
+  unsigned patCondOffset() const {
     return NumMandatoryStmtPtr + hasPatternGuard();
+  }
+  unsigned vardeclsOffset() const {
+    return NumMandatoryStmtPtr + hasPatternGuard() + hasPatCond();
   }
 
   unsigned numTrailingObjects(OverloadToken<Stmt *>) const {
-    return NumMandatoryStmtPtr + hasPatternGuard() + InspectPatternBits.NumPats;
+    return NumMandatoryStmtPtr + hasPatternGuard() + hasPatCond() +
+           InspectPatternBits.NumVarDecls;
   }
 
 public:
-  StructuredBindingPatternStmt(SourceLocation PatternLoc,
+  StructuredBindingPatternStmt(const ASTContext &Ctx, SourceLocation PatternLoc,
                                SourceLocation ColonLoc, SourceLocation LLoc,
-                               SourceLocation RLoc, ArrayRef<Stmt *> Stmts,
-                               Stmt *SubStmt, Expr *Guard,
+                               SourceLocation RLoc, DecompositionDecl *DecompCond,
+                               Stmt *SubStmt, Expr *Guard, Expr *PatCond,
+                               ArrayRef<Stmt *> VarDecls,
                                bool ExcludedFromTypeDeduction);
 
   /// Build an empty expression pattern statement.
   explicit StructuredBindingPatternStmt(EmptyShell Empty, bool HasPatternGuard)
       : PatternStmt(StructuredBindingPatternStmtClass, Empty) {
     InspectPatternBits.PatternStmtHasPatternGuard = HasPatternGuard;
-    InspectPatternBits.NumPats = 0;
+    InspectPatternBits.NumVarDecls = 0;
+    InspectPatternBits.HasPatCond = 0;
   }
 
   /// Build a expression pattern statement.
   static StructuredBindingPatternStmt *
   Create(const ASTContext &Ctx, SourceLocation PatternLoc,
          SourceLocation ColonLoc, SourceLocation LLoc, SourceLocation RLoc,
-         ArrayRef<Stmt *> Stmts, Stmt *SubStmt, Expr *Guard,
-         bool ExcludedFromTypeDeduction);
+         DecompositionDecl *DecompCond, Stmt *SubStmt, Expr *Guard, Expr *PatCond,
+         ArrayRef<Stmt *> VarDecls, bool ExcludedFromTypeDeduction);
 
   /// Build an empty expression pattern statement.
-  static StructuredBindingPatternStmt *CreateEmpty(const ASTContext &Ctx,
-                                                   bool HasPatternGuard);
+  static StructuredBindingPatternStmt *
+  CreateEmpty(const ASTContext &Ctx, bool HasPatternGuard, bool HasPatCond);
 
   SourceLocation getLSquareLoc() const { return LSquareLoc; }
   void setLSquareLoc(SourceLocation Loc) { LSquareLoc = Loc; }
@@ -4539,6 +4556,7 @@ public:
   SourceLocation getIdentifierLoc() const { return getPatternLoc(); }
   void setIdentifierLoc(SourceLocation L) { setPatternLoc(L); }
 
+  /// Substmt
   Stmt *getSubStmt() { return getTrailingObjects<Stmt *>()[subStmtOffset()]; }
   const Stmt *getSubStmt() const {
     return getTrailingObjects<Stmt *>()[subStmtOffset()];
@@ -4548,6 +4566,12 @@ public:
     getTrailingObjects<Stmt *>()[subStmtOffset()] = S;
   }
 
+  /// DecompositionDecl
+  DecompositionDecl *getDecompDecl();
+  const DecompositionDecl *getDecompDecl() const;
+  void setDecompDecl(const ASTContext &Ctx, DecompositionDecl *S);
+
+  /// Pattern guards
   Expr *getPatternGuard() {
     assert(hasPatternGuard() && "This pattern has no guard to get!");
     return reinterpret_cast<Expr *>(
@@ -4569,74 +4593,65 @@ public:
     return InspectPatternBits.PatternStmtHasPatternGuard;
   }
 
-  void setPats(ArrayRef<Stmt *> Stmts);
+  /// Pattern condition
+  Expr *getPatCond() {
+    assert(hasPatCond() && "This pattern has no guard to get!");
+    return reinterpret_cast<Expr *>(
+        getTrailingObjects<Stmt *>()[patCondOffset()]);
+  }
+
+  const Expr *getPatCond() const {
+    assert(hasPatCond() && "This pattern has no guard to get!");
+    return reinterpret_cast<Expr *>(
+        getTrailingObjects<Stmt *>()[patCondOffset()]);
+  }
+
+  void setPatCond(Expr *Cond) {
+    getTrailingObjects<Stmt *>()[patCondOffset()] =
+        reinterpret_cast<Stmt *>(Cond);
+  }
+
+  bool hasPatCond() const { return InspectPatternBits.HasPatCond; }
+
+  /// VarDecl list introduced by identifier pattern elements.
+  void setVarDecls(ArrayRef<Stmt *> VarDecls);
+
+  bool vardecls_empty() const { return InspectPatternBits.NumVarDecls == 0; }
+  unsigned size() const { return InspectPatternBits.NumVarDecls; }
+
+  using vardecls_iterator = Stmt **;
+  using vardecls_range = llvm::iterator_range<vardecls_iterator>;
+
+  vardecls_range vardecls() {
+    return vardecls_range(vardecls_begin(), vardecls_end());
+  }
+  vardecls_iterator vardecls_begin() {
+    return getTrailingObjects<Stmt *>() + vardeclsOffset();
+  }
+  vardecls_iterator vardecls_end() { return vardecls_begin() + size(); }
+
+  using const_vardecls_iterator = Stmt *const *;
+  using vardecls_const_range = llvm::iterator_range<const_vardecls_iterator>;
+
+  vardecls_const_range vardecls() const {
+    return vardecls_const_range(vardecls_begin(), vardecls_end());
+  }
+
+  const_vardecls_iterator vardecls_begin() const {
+    return getTrailingObjects<Stmt *>() + vardeclsOffset();
+  }
+
+  const_vardecls_iterator vardecls_end() const {
+    return vardecls_begin() + size();
+  }
 
   // Iterators
-  bool pats_empty() const { return InspectPatternBits.NumPats == 0; }
-  unsigned size() const { return InspectPatternBits.NumPats; }
-
-  using pats_iterator = Stmt **;
-  using pats_range = llvm::iterator_range<pats_iterator>;
-
-  pats_range pats() { return pats_range(pats_begin(), pats_end()); }
-  pats_iterator pats_begin() {
-    return getTrailingObjects<Stmt *>() + patsOffset();
-  }
-  pats_iterator pats_end() { return pats_begin() + size(); }
-  Stmt *pats_front() { return !pats_empty() ? pats_begin()[0] : nullptr; }
-
-  Stmt *pats_back() {
-    return !pats_empty() ? pats_begin()[size() - 1] : nullptr;
-  }
-
-  using const_pats_iterator = Stmt *const *;
-  using pats_const_range = llvm::iterator_range<const_pats_iterator>;
-
-  pats_const_range pats() const {
-    return pats_const_range(pats_begin(), pats_end());
-  }
-
-  const_pats_iterator pats_begin() const {
-    return getTrailingObjects<Stmt *>() + patsOffset();
-  }
-
-  const_pats_iterator pats_end() const { return pats_begin() + size(); }
-
-  const Stmt *pats_front() const {
-    return !pats_empty() ? pats_begin()[0] : nullptr;
-  }
-
-  const Stmt *pats_back() const {
-    return !pats_empty() ? pats_begin()[size() - 1] : nullptr;
-  }
-
-  using reverse_pats_iterator = std::reverse_iterator<pats_iterator>;
-
-  reverse_pats_iterator pats_rbegin() {
-    return reverse_pats_iterator(pats_end());
-  }
-
-  reverse_pats_iterator pats_rend() {
-    return reverse_pats_iterator(pats_begin());
-  }
-
-  using const_reverse_pats_iterator =
-      std::reverse_iterator<const_pats_iterator>;
-
-  const_reverse_pats_iterator pats_rbegin() const {
-    return const_reverse_pats_iterator(pats_end());
-  }
-
-  const_reverse_pats_iterator pats_rend() const {
-    return const_reverse_pats_iterator(pats_begin());
-  }
-
   child_range children() {
-    return child_range(getTrailingObjects<Stmt *>(), pats_end());
+    return child_range(getTrailingObjects<Stmt *>(), vardecls_end());
   }
 
   const_child_range children() const {
-    return const_child_range(getTrailingObjects<Stmt *>(), pats_end());
+    return const_child_range(getTrailingObjects<Stmt *>(), vardecls_end());
   }
 
   friend class ASTStmtReader;

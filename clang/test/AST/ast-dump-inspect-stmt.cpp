@@ -82,18 +82,25 @@ void TestInspect(int a, int b) {
   // CHECK: InspectExpr {{.*}} 'void' has_implicit_result_type
   // CHECK: StructuredBindingPatternStmt {{.*}} <line:80:5, col:10>
   // CHECK: CompoundStmt {{.*}} <col:15, col:27>
-  // CHECK: BinaryOperator {{.*}} 'bool' '=='
-  // CHECK: |-ImplicitCastExpr {{.*}} 'int' <LValueToRValue>
-  // CHECK: | `-MemberExpr {{.*}} 'int' lvalue .a
-  // CHECK: |   `-DeclRefExpr {{.*}} 's' lvalue Decomposition {{.*}} '' 's &'
-  // CHECK: `-ConstantExpr {{.*}} 'int' Int: 1
-  // CHECK:   `-IntegerLiteral {{.*}} 'int' 1
-  // CHECK: BinaryOperator {{.*}} 'bool' '=='
-  // CHECK: |-ImplicitCastExpr {{.*}} 'int' <LValueToRValue>
-  // CHECK: | `-MemberExpr {{.*}} 'int' lvalue .b
-  // CHECK: |   `-DeclRefExpr {{.*}} 's' lvalue Decomposition {{.*}} '' 's &'
-  // CHECK: `-ConstantExpr {{.*}} 'int' Int: 2
-  // CHECK:   `-IntegerLiteral {{.*}} 'int' 2
+  // CHECK: DeclStmt
+  // CHECK: `-DecompositionDecl {{.*}} line:79:12 used 's &' cinit
+  // CHECK:   |-BindingDecl {{.*}} <col:12> col:12 __pat_0_0 'int'
+  // CHECK:     `-MemberExpr {{.*}} <col:12> 'int' lvalue .a
+  // CHECK:   `-BindingDecl {{.*}} <col:12> col:12 __pat_0_1 'int'
+  // CHECK:      `-MemberExpr {{.*}} <col:12> 'int' lvalue .b
+  // CHECK: BinaryOperator {{.*}} 'bool' '&&'
+  // CHECK: |-BinaryOperator {{.*}} 'bool' '=='
+  // CHECK:   |-ImplicitCastExpr {{.*}} 'int' <LValueToRValue>
+  // CHECK:   | `-MemberExpr {{.*}} 'int' lvalue .a
+  // CHECK:   |   `-DeclRefExpr {{.*}} 's' lvalue Decomposition {{.*}} '' 's &'
+  // CHECK:   `-ConstantExpr {{.*}} 'int' Int: 1
+  // CHECK:     `-IntegerLiteral {{.*}} 'int' 1
+  // CHECK: `-BinaryOperator {{.*}} 'bool' '=='
+  // CHECK:   |-ImplicitCastExpr {{.*}} 'int' <LValueToRValue>
+  // CHECK:   | `-MemberExpr {{.*}} 'int' lvalue .b
+  // CHECK:   |   `-DeclRefExpr {{.*}} 's' lvalue Decomposition {{.*}} '' 's &'
+  // CHECK:   `-ConstantExpr {{.*}} 'int' Int: 2
+  // CHECK:     `-IntegerLiteral {{.*}} 'int' 2
 
   struct color_pack {
     Color2 c1, c2;
@@ -106,29 +113,30 @@ void TestInspect(int a, int b) {
   };
 
   // CHECK: InspectExpr {{.*}} 'void' has_implicit_result_type
-  // CHECK:   |-StructuredBindingPatternStmt
-  // CHECK:   | |-NullStmt {{.*}} <col:30>
-  // CHECK:   | |-BinaryOperator {{.*}} 'bool' '=='
-  // CHECK:   | | |   `-MemberExpr {{.*}} 'Color2' lvalue .c1
-  // CHECK:   | |     `-DeclRefExpr {{.*}} <col:11> 'Color2' EnumConstant {{.*}} 'Red' 'Color2'
-  // CHECK:   | `-BinaryOperator {{.*}} 'bool' '=='
-  // CHECK:   |   |   `-MemberExpr {{.*}} <col:12> 'Color2' lvalue .c2
-  // CHECK:   |       `-DeclRefExpr {{.*}} <col:21> 'Color2' EnumConstant {{.*}} 'Green' 'Color2'
-  // CHECK:   |-StructuredBindingPatternStmt
-  // CHECK:   | |-BinaryOperator {{.*}} 'bool' '=='
-  // CHECK:   | | |   `-MemberExpr {{.*}} <col:12> 'Color2' lvalue .c1
-  // CHECK:   | |     `-DeclRefExpr {{.*}} <col:6, col:14> 'Color2' EnumConstant {{.*}} 'Red' 'Color2'
-  // CHECK:   | `-BinaryOperator {{.*}} 'bool' '=='
-  // CHECK:   |   |   `-MemberExpr {{.*}} <col:12> 'Color2' lvalue .c2
-  // CHECK:   |       `-DeclRefExpr {{.*}} <col:19, col:27> 'Color2' EnumConstant {{.*}} 'Blue' 'Color2'
-  // CHECK:   `-StructuredBindingPatternStmt
-  // CHECK:     |-DeclStmt {{.*}} <col:6>
-  // CHECK:     | `-VarDecl {{.*}} used Green 'Color2 &' auto cinit
-  // CHECK:     |   `-MemberExpr {{.*}} 'Color2' lvalue .c1
-  // CHECK:     |     `-DeclRefExpr {{.*}} <col:12> 'color_pack' lvalue Decomposition
-  // CHECK:     `-BinaryOperator {{.*}} 'bool' '=='
-  // CHECK:       |   `-MemberExpr {{.*}} <col:12> 'Color2' lvalue .c2
-  // CHECK:           `-DeclRefExpr {{.*}} <col:18, col:26> 'Color2' EnumConstant {{.*}} 'Red' 'Color2'
+  // CHECK: StructuredBindingPatternStmt
+  // CHECK: `-BinaryOperator {{.*}} 'bool' '&&'
+  // CHECK:   |-BinaryOperator {{.*}} 'bool' '=='
+  // CHECK:     `-MemberExpr {{.*}} 'Color2' lvalue .c1
+  // CHECK:       `-DeclRefExpr {{.*}} <col:11> 'Color2' EnumConstant {{.*}} 'Red' 'Color2'
+  // CHECK:   `-BinaryOperator {{.*}} 'bool' '=='
+  // CHECK:     `-MemberExpr {{.*}} <col:12> 'Color2' lvalue .c2
+  // CHECK:       `-DeclRefExpr {{.*}} <col:21> 'Color2' EnumConstant {{.*}} 'Green' 'Color2'
+  // CHECK: StructuredBindingPatternStmt
+  // CHECK: `-BinaryOperator {{.*}} 'bool' '&&'
+  // CHECK:   |-BinaryOperator {{.*}} 'bool' '=='
+  // CHECK:     `-MemberExpr {{.*}} <col:12> 'Color2' lvalue .c1
+  // CHECK:       `-DeclRefExpr {{.*}} <col:6, col:14> 'Color2' EnumConstant {{.*}} 'Red' 'Color2'
+  // CHECK:   `-BinaryOperator {{.*}} 'bool' '=='
+  // CHECK:     `-MemberExpr {{.*}} <col:12> 'Color2' lvalue .c2
+  // CHECK:       `-DeclRefExpr {{.*}} <col:19, col:27> 'Color2' EnumConstant {{.*}} 'Blue' 'Color2'
+  // CHECK: StructuredBindingPatternStmt
+  // CHECK: |-BinaryOperator {{.*}} 'bool' '=='
+  // CHECK:   `-MemberExpr {{.*}} <col:12> 'Color2' lvalue .c2
+  // CHECK:     `-DeclRefExpr {{.*}} <col:18, col:26> 'Color2' EnumConstant {{.*}} 'Red' 'Color2'
+  // CHECK: `-DeclStmt {{.*}} <col:6>
+  // CHECK:   `-VarDecl {{.*}} used Green 'Color2 &' auto cinit
+  // CHECK:     `-MemberExpr {{.*}} 'Color2' lvalue .c1
+  // CHECK:       `-DeclRefExpr {{.*}} <col:12> 'color_pack' lvalue Decomposition
 
   int array[2] = {2,1};
   inspect (array) {
@@ -136,10 +144,11 @@ void TestInspect(int a, int b) {
   };
   // CHECK: InspectExpr
   // CHECK: StructuredBindingPatternStmt
-  // CHECK: BinaryOperator
-  // CHECK:   ArraySubscriptExpr {{.*}} <col:12> 'int' lvalue
-  // CHECK:     IntegerLiteral {{.*}} <col:12> 'int' 0
-  // CHECK: BinaryOperator
-  // CHECK:   ArraySubscriptExpr {{.*}} <col:12> 'int' lvalue
-  // CHECK:     IntegerLiteral {{.*}} <col:12> 'int' 1
+  // CHECK: BinaryOperator {{.*}} 'bool' '&&'
+  // CHECK:   BinaryOperator {{.*}} 'bool' '=='
+  // CHECK:     ArraySubscriptExpr {{.*}} <col:12> 'int' lvalue
+  // CHECK:       IntegerLiteral {{.*}} <col:12> 'int' 0
+  // CHECK:   BinaryOperator
+  // CHECK:     ArraySubscriptExpr {{.*}} <col:12> 'int' lvalue
+  // CHECK:       IntegerLiteral {{.*}} <col:12> 'int' 1
 }
