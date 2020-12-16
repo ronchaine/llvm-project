@@ -216,12 +216,12 @@ StructuredBindingPatternStmt::StructuredBindingPatternStmt(const ASTContext &Ctx
   setRSquareLoc(RLoc);
   setDecompDecl(Ctx, DecompCond);
   setSubStmt(SubStmt);
+  setPatCond(PatCond);
   if (Guard) {
     InspectPatternBits.PatternStmtHasPatternGuard = true;
     setPatternGuard(Guard);
   }
   setVarDecls(VarDecls);
-  setPatCond(PatCond);
 }
 
 StructuredBindingPatternStmt *StructuredBindingPatternStmt::Create(

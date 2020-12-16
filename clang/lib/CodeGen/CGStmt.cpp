@@ -2380,8 +2380,9 @@ void CodeGenFunction::EmitStructuredBindingPatternStmt(
     EmitStmt(VarDecl);
 
   // Emit code to handle the condition for the matching expression.
-  EmitBranchOnBoolExpr(cast<Expr>(S.getPatCond()), MatchCondNextBB, NextPattern,
-                       getProfileCount(S.getPatCond()));
+  if (S.hasPatCond())
+    EmitBranchOnBoolExpr(cast<Expr>(S.getPatCond()), MatchCondNextBB,
+                         NextPattern, getProfileCount(S.getPatCond()));
 
   // Do the proper handling in the presence of a pattern guard.
   if (S.hasPatternGuard()) {

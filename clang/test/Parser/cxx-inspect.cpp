@@ -179,6 +179,7 @@ void stbind0(int x) {
     [1,idx] =>;
     id => { id.a++; }
     [1,new_id] => { new_id++; };
+    [new_id1, new_id2] =>;
   };
 
   struct color_pack {

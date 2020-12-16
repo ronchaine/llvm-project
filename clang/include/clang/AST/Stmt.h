@@ -4486,6 +4486,9 @@ class StructuredBindingPatternStmt final
   //
   // * A "Stmt *" for the substatement of the pattern statement. Always present.
   //
+  // * A "Stmt *" to hold the decomposition declaration representing bindings
+  //   from the inspect condition.
+  //
   // * A "Stmt *" for the pattern guard condition.
   //    Present if and only if hasPatternGuard(). This is in fact a "Expr *".
   //
@@ -4501,15 +4504,13 @@ class StructuredBindingPatternStmt final
 
   unsigned subStmtOffset() const { return SubStmtOffset; }
   unsigned decompDeclOffset() const { return DecompDeclOffset; }
-
-  unsigned patternGuardOffset() const { return hasPatternGuard(); }
+  unsigned patternGuardOffset() const { return NumMandatoryStmtPtr; }
   unsigned patCondOffset() const {
     return NumMandatoryStmtPtr + hasPatternGuard();
   }
   unsigned vardeclsOffset() const {
     return NumMandatoryStmtPtr + hasPatternGuard() + hasPatCond();
   }
-
   unsigned numTrailingObjects(OverloadToken<Stmt *>) const {
     return NumMandatoryStmtPtr + hasPatternGuard() + hasPatCond() +
            InspectPatternBits.NumVarDecls;
@@ -4595,13 +4596,13 @@ public:
 
   /// Pattern condition
   Expr *getPatCond() {
-    assert(hasPatCond() && "This pattern has no guard to get!");
+    assert(hasPatCond() && "This pattern list yields no condition!");
     return reinterpret_cast<Expr *>(
         getTrailingObjects<Stmt *>()[patCondOffset()]);
   }
 
   const Expr *getPatCond() const {
-    assert(hasPatCond() && "This pattern has no guard to get!");
+    assert(hasPatCond() && "This pattern list yields no condition!");
     return reinterpret_cast<Expr *>(
         getTrailingObjects<Stmt *>()[patCondOffset()]);
   }
@@ -4647,11 +4648,15 @@ public:
 
   // Iterators
   child_range children() {
-    return child_range(getTrailingObjects<Stmt *>(), vardecls_end());
+    return child_range(getTrailingObjects<Stmt *>(),
+                       getTrailingObjects<Stmt *>() +
+                           numTrailingObjects(OverloadToken<Stmt *>()));
   }
 
   const_child_range children() const {
-    return const_child_range(getTrailingObjects<Stmt *>(), vardecls_end());
+    return const_child_range(getTrailingObjects<Stmt *>(),
+                             getTrailingObjects<Stmt *>() +
+                                 numTrailingObjects(OverloadToken<Stmt *>()));
   }
 
   friend class ASTStmtReader;
