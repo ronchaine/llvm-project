@@ -202,10 +202,11 @@ void StructuredBindingPatternStmt::setVarDecls(ArrayRef<Stmt *> VarDecls) {
   std::copy(VarDecls.begin(), VarDecls.end(), vardecls_begin());
 }
 
-StructuredBindingPatternStmt::StructuredBindingPatternStmt(const ASTContext &Ctx,
-    SourceLocation PatternLoc, SourceLocation ColonLoc, SourceLocation LLoc,
-    SourceLocation RLoc, DecompositionDecl *DecompCond, Stmt *SubStmt, Expr *Guard,
-    Expr *PatCond, ArrayRef<Stmt *> VarDecls, bool ExcludedFromTypeDeduction)
+StructuredBindingPatternStmt::StructuredBindingPatternStmt(
+    const ASTContext &Ctx, SourceLocation PatternLoc, SourceLocation ColonLoc,
+    SourceLocation LLoc, SourceLocation RLoc, Stmt *DecompCond, Stmt *SubStmt,
+    Expr *Guard, Expr *PatCond, ArrayRef<Stmt *> VarDecls,
+    bool ExcludedFromTypeDeduction)
     : PatternStmt(StructuredBindingPatternStmtClass, PatternLoc, ColonLoc,
                   ExcludedFromTypeDeduction) {
   InspectPatternBits.PatternStmtHasPatternGuard = false;
@@ -214,7 +215,7 @@ StructuredBindingPatternStmt::StructuredBindingPatternStmt(const ASTContext &Ctx
   InspectPatternBits.NumVarDecls = VarDecls.size();
   setLSquareLoc(LLoc);
   setRSquareLoc(RLoc);
-  setDecompDecl(Ctx, DecompCond);
+  setDecompStmt(Ctx, DecompCond);
   setSubStmt(SubStmt);
   setPatCond(PatCond);
   if (Guard) {
@@ -226,7 +227,7 @@ StructuredBindingPatternStmt::StructuredBindingPatternStmt(const ASTContext &Ctx
 
 StructuredBindingPatternStmt *StructuredBindingPatternStmt::Create(
     const ASTContext &Ctx, SourceLocation PatternLoc, SourceLocation ColonLoc,
-    SourceLocation LLoc, SourceLocation RLoc, DecompositionDecl *DecompCond, Stmt *SubStmt,
+    SourceLocation LLoc, SourceLocation RLoc, Stmt *DecompCond, Stmt *SubStmt,
     Expr *Guard, Expr *PatCond, ArrayRef<Stmt *> VarDecls,
     bool ExcludedFromTypeDeduction) {
   bool HasPatternGuard = Guard != nullptr;
@@ -250,21 +251,15 @@ StructuredBindingPatternStmt *StructuredBindingPatternStmt::CreateEmpty(
   return new (Mem) StructuredBindingPatternStmt(EmptyShell(), HasPatternGuard);
 }
 
-DecompositionDecl *StructuredBindingPatternStmt::getDecompDecl() {
-  auto *DS =
-      static_cast<DeclStmt *>(getTrailingObjects<Stmt *>()[decompDeclOffset()]);
-  return cast<DecompositionDecl>(DS->getSingleDecl());
+Stmt *StructuredBindingPatternStmt::getDecompStmt() {
+  return getTrailingObjects<Stmt *>()[decompDeclOffset()];
 }
 
-const DecompositionDecl *StructuredBindingPatternStmt::getDecompDecl() const {
-  auto *DS =
-      static_cast<DeclStmt *>(getTrailingObjects<Stmt *>()[decompDeclOffset()]);
-  return cast<DecompositionDecl>(DS->getSingleDecl());
+const Stmt *StructuredBindingPatternStmt::getDecompStmt() const {
+  return getTrailingObjects<Stmt *>()[decompDeclOffset()];
 }
 
-void StructuredBindingPatternStmt::setDecompDecl(const ASTContext &Ctx,
-                                                 DecompositionDecl *D) {
-  SourceRange VarRange = D->getSourceRange();
-  getTrailingObjects<Stmt *>()[decompDeclOffset()] = new (Ctx)
-      DeclStmt(DeclGroupRef(D), VarRange.getBegin(), VarRange.getEnd());
+void StructuredBindingPatternStmt::setDecompStmt(const ASTContext &Ctx,
+                                                 Stmt *S) {
+  getTrailingObjects<Stmt *>()[decompDeclOffset()] = S;
 }

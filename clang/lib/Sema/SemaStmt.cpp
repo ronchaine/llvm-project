@@ -821,6 +821,12 @@ StmtResult Sema::ActOnStructuredBindingPattern(
     return StmtError();
   }
 
+  StmtResult DecompDS =
+      ActOnDeclStmt(ConvertDeclToDeclGroup(DecompCond),
+                    DecompCond->getBeginLoc(), DecompCond->getEndLoc());
+  if (DecompDS.isInvalid())
+    return StmtError();
+
   // Now that we got all bindings populated with the proper type, for each
   // element in the pattern list try to ==/match() with the equivalent element
   // in the decomposed inspect condition. Build a BO_LAnd chain on top of those
@@ -873,8 +879,8 @@ StmtResult Sema::ActOnStructuredBindingPattern(
   }
 
   auto *SBP = StructuredBindingPatternStmt::Create(
-      Context, LLoc, ColonLoc, LLoc, RLoc, DecompCond, SubStmt, Guard, PatCond, VarDecls,
-      ExcludedFromTypeDeduction);
+      Context, LLoc, ColonLoc, LLoc, RLoc, DecompDS.get(), SubStmt, Guard,
+      PatCond, VarDecls, ExcludedFromTypeDeduction);
 
   Inspect->addPattern(SBP);
   return SBP;
