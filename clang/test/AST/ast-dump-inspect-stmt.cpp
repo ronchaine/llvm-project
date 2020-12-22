@@ -130,13 +130,16 @@ void TestInspect(int a, int b) {
   // CHECK:     `-MemberExpr {{.*}} <col:12> 'Color2' lvalue .c2
   // CHECK:       `-DeclRefExpr {{.*}} <col:19, col:27> 'Color2' EnumConstant {{.*}} 'Blue' 'Color2'
   // CHECK: StructuredBindingPatternStmt
-  // CHECK: |-BinaryOperator {{.*}} 'bool' '=='
+  // CHECK: DeclStmt
+  // CHECK: `-DecompositionDecl {{.*}} 'color_pack &' cinit
+  // CHECK:   |-BindingDecl {{.*}} col:6 Green 'Color2'
+  // CHECK:   | `-MemberExpr {{.*}} <col:6> 'Color2' lvalue .c1
+  // CHECK:   `-BindingDecl {{.*}} col:12 __pat_3_1 'Color2'
+  // CHECK:     `-MemberExpr {{.*}} <col:12> 'Color2' lvalue .c2
+  // CHECK: `-BinaryOperator {{.*}} 'bool' '=='
   // CHECK:   `-MemberExpr {{.*}} <col:12> 'Color2' lvalue .c2
-  // CHECK:     `-DeclRefExpr {{.*}} <col:18, col:26> 'Color2' EnumConstant {{.*}} 'Red' 'Color2'
-  // CHECK: `-DeclStmt {{.*}} <col:6>
-  // CHECK:   `-VarDecl {{.*}} used Green 'Color2 &' auto cinit
-  // CHECK:     `-MemberExpr {{.*}} 'Color2' lvalue .c1
-  // CHECK:       `-DeclRefExpr {{.*}} <col:12> 'color_pack' lvalue Decomposition
+  // CHECK:     `-DeclRefExpr {{.*}} <col:12> 'color_pack' lvalue Decomposition {{.*}} '' 'color_pack &'
+  // CHECK:   `-ConstantExpr {{.*}} <col:18, col:26> 'Color2' Int: 0
 
   int array[2] = {2,1};
   inspect (array) {
@@ -151,4 +154,23 @@ void TestInspect(int a, int b) {
   // CHECK:   BinaryOperator
   // CHECK:     ArraySubscriptExpr {{.*}} <col:12> 'int' lvalue
   // CHECK:       IntegerLiteral {{.*}} <col:12> 'int' 1
+
+  struct insn_type {
+    unsigned opc : 16, imm : 16;
+  };
+  insn_type insn;
+  inspect(insn) {
+    [o, i] => { o++; };
+  };
+  // CHECK: InspectExpr
+  // CHECK: StructuredBindingPatternStmt
+  // CHECK: |-CompoundStmt {{.*}} <col:15, col:22>
+  // CHECK: | `-UnaryOperator {{.*}} <col:17, col:18> 'unsigned int' postfix '++'
+  // CHECK: |   `-DeclRefExpr {{.*}} <col:17> 'unsigned int' lvalue bitfield Binding {{.*}} 'o' 'unsigned int'
+  // CHECK: `-DeclStmt
+  // CHECK:   `-DecompositionDecl {{.*}} used 'insn_type &' cinit
+  // CHECK:     |-BindingDecl {{.*}}  col:6 referenced o 'unsigned int'
+  // CHECK:     | `-MemberExpr {{.*}} <col:6> 'unsigned int' lvalue bitfield .opc
+  // CHECK:     `-BindingDecl {{.*}}  <col:9> col:9 i 'unsigned int'
+  // CHECK:       `-MemberExpr {{.*}}  <col:9> 'unsigned int' lvalue bitfield .imm
 }

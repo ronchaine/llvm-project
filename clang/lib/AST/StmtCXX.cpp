@@ -195,24 +195,15 @@ ExpressionPatternStmt::CreateEmpty(const ASTContext &Ctx,
   return new (Mem) ExpressionPatternStmt(EmptyShell(), HasPatternGuard);
 }
 
-void StructuredBindingPatternStmt::setVarDecls(ArrayRef<Stmt *> VarDecls) {
-  assert(InspectPatternBits.NumVarDecls == VarDecls.size() &&
-         "NumPats doesn't fit in bits of InspectPatternBits.NumPats!");
-
-  std::copy(VarDecls.begin(), VarDecls.end(), vardecls_begin());
-}
-
 StructuredBindingPatternStmt::StructuredBindingPatternStmt(
     const ASTContext &Ctx, SourceLocation PatternLoc, SourceLocation ColonLoc,
     SourceLocation LLoc, SourceLocation RLoc, Stmt *DecompCond, Stmt *SubStmt,
-    Expr *Guard, Expr *PatCond, ArrayRef<Stmt *> VarDecls,
-    bool ExcludedFromTypeDeduction)
+    Expr *Guard, Expr *PatCond, bool ExcludedFromTypeDeduction)
     : PatternStmt(StructuredBindingPatternStmtClass, PatternLoc, ColonLoc,
                   ExcludedFromTypeDeduction) {
   InspectPatternBits.PatternStmtHasPatternGuard = false;
   InspectPatternBits.HasPatCond = PatCond != nullptr;
   InspectPatternBits.PatternLoc = LLoc;
-  InspectPatternBits.NumVarDecls = VarDecls.size();
   setLSquareLoc(LLoc);
   setRSquareLoc(RLoc);
   setDecompStmt(Ctx, DecompCond);
@@ -222,24 +213,22 @@ StructuredBindingPatternStmt::StructuredBindingPatternStmt(
     InspectPatternBits.PatternStmtHasPatternGuard = true;
     setPatternGuard(Guard);
   }
-  setVarDecls(VarDecls);
 }
 
 StructuredBindingPatternStmt *StructuredBindingPatternStmt::Create(
     const ASTContext &Ctx, SourceLocation PatternLoc, SourceLocation ColonLoc,
     SourceLocation LLoc, SourceLocation RLoc, Stmt *DecompCond, Stmt *SubStmt,
-    Expr *Guard, Expr *PatCond, ArrayRef<Stmt *> VarDecls,
-    bool ExcludedFromTypeDeduction) {
+    Expr *Guard, Expr *PatCond, bool ExcludedFromTypeDeduction) {
   bool HasPatternGuard = Guard != nullptr;
   bool HasPatCond = PatCond != nullptr;
 
-  void *Mem = Ctx.Allocate(
-      totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr + HasPatternGuard +
-                               HasPatCond + VarDecls.size()),
-      alignof(StructuredBindingPatternStmt));
+  void *Mem =
+      Ctx.Allocate(totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr +
+                                            HasPatternGuard + HasPatCond),
+                   alignof(StructuredBindingPatternStmt));
   return new (Mem) StructuredBindingPatternStmt(
-      Ctx, PatternLoc, ColonLoc, LLoc, RLoc, DecompCond, SubStmt, Guard, PatCond,
-      VarDecls, ExcludedFromTypeDeduction);
+      Ctx, PatternLoc, ColonLoc, LLoc, RLoc, DecompCond, SubStmt, Guard,
+      PatCond, ExcludedFromTypeDeduction);
 }
 
 StructuredBindingPatternStmt *StructuredBindingPatternStmt::CreateEmpty(

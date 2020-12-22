@@ -1237,8 +1237,6 @@ protected:
     /// Unified condition considering all matchers in the pattern
     /// list. Usually a chain of '&&' on equality checks.
     unsigned HasPatCond : 1;
-    /// Tracks all new variables from identifier pattern elelemtns.
-    unsigned NumVarDecls : 32 - (NumStmtBits + 1 + 1 + 1 + 1);
 
     /// The location of the '__' wildcard, identifier,
     /// constant expression or pattern list.
@@ -4496,9 +4494,6 @@ class StructuredBindingPatternStmt final
   //    that contribute to matching and form the overall pattern condition.
   //    Present only if there are any conditions.
   //
-  // * A list of "Stmt *" representing all pattern elements introducing a
-  //    identifier, if any.
-  //
   enum { SubStmtOffset = 0, DecompDeclOffset = 1 };
   enum { NumMandatoryStmtPtr = 2 };
 
@@ -4508,12 +4503,8 @@ class StructuredBindingPatternStmt final
   unsigned patCondOffset() const {
     return NumMandatoryStmtPtr + hasPatternGuard();
   }
-  unsigned vardeclsOffset() const {
-    return NumMandatoryStmtPtr + hasPatternGuard() + hasPatCond();
-  }
   unsigned numTrailingObjects(OverloadToken<Stmt *>) const {
-    return NumMandatoryStmtPtr + hasPatternGuard() + hasPatCond() +
-           InspectPatternBits.NumVarDecls;
+    return NumMandatoryStmtPtr + hasPatternGuard() + hasPatCond();
   }
 
 public:
@@ -4521,14 +4512,12 @@ public:
                                SourceLocation ColonLoc, SourceLocation LLoc,
                                SourceLocation RLoc, Stmt *DecompCond,
                                Stmt *SubStmt, Expr *Guard, Expr *PatCond,
-                               ArrayRef<Stmt *> VarDecls,
                                bool ExcludedFromTypeDeduction);
 
   /// Build an empty expression pattern statement.
   explicit StructuredBindingPatternStmt(EmptyShell Empty, bool HasPatternGuard)
       : PatternStmt(StructuredBindingPatternStmtClass, Empty) {
     InspectPatternBits.PatternStmtHasPatternGuard = HasPatternGuard;
-    InspectPatternBits.NumVarDecls = 0;
     InspectPatternBits.HasPatCond = 0;
   }
 
@@ -4537,7 +4526,7 @@ public:
   Create(const ASTContext &Ctx, SourceLocation PatternLoc,
          SourceLocation ColonLoc, SourceLocation LLoc, SourceLocation RLoc,
          Stmt *DecompCond, Stmt *SubStmt, Expr *Guard, Expr *PatCond,
-         ArrayRef<Stmt *> VarDecls, bool ExcludedFromTypeDeduction);
+         bool ExcludedFromTypeDeduction);
 
   /// Build an empty expression pattern statement.
   static StructuredBindingPatternStmt *
@@ -4613,38 +4602,6 @@ public:
   }
 
   bool hasPatCond() const { return InspectPatternBits.HasPatCond; }
-
-  /// VarDecl list introduced by identifier pattern elements.
-  void setVarDecls(ArrayRef<Stmt *> VarDecls);
-
-  bool vardecls_empty() const { return InspectPatternBits.NumVarDecls == 0; }
-  unsigned size() const { return InspectPatternBits.NumVarDecls; }
-
-  using vardecls_iterator = Stmt **;
-  using vardecls_range = llvm::iterator_range<vardecls_iterator>;
-
-  vardecls_range vardecls() {
-    return vardecls_range(vardecls_begin(), vardecls_end());
-  }
-  vardecls_iterator vardecls_begin() {
-    return getTrailingObjects<Stmt *>() + vardeclsOffset();
-  }
-  vardecls_iterator vardecls_end() { return vardecls_begin() + size(); }
-
-  using const_vardecls_iterator = Stmt *const *;
-  using vardecls_const_range = llvm::iterator_range<const_vardecls_iterator>;
-
-  vardecls_const_range vardecls() const {
-    return vardecls_const_range(vardecls_begin(), vardecls_end());
-  }
-
-  const_vardecls_iterator vardecls_begin() const {
-    return getTrailingObjects<Stmt *>() + vardeclsOffset();
-  }
-
-  const_vardecls_iterator vardecls_end() const {
-    return vardecls_begin() + size();
-  }
 
   // Iterators
   child_range children() {

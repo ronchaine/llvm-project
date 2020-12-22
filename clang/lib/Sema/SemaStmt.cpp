@@ -781,12 +781,18 @@ StmtResult Sema::ActOnStructuredBindingPattern(
   // reserved identifier. FIXME: should we allow BindingDecl::Create
   // to have a version without a named identifier?
   for (unsigned I = 0, E = PatList.size(); I != E; ++I) {
-    SmallString<64> Name;
-    llvm::raw_svector_ostream Stream(Name);
-    Stream << "__pat_" << InspectPatCount << "_" << I;
-
-    IdentifierInfo *EltII = &Context.Idents.get(Stream.str());
-    auto *BD = BindingDecl::Create(Context, DC, MatchSourceLoc, EltII);
+    IdentifierInfo *EltII = nullptr;
+    SourceLocation Loc = MatchSourceLoc;
+    if (PatList[I].Action == ParsedPatEltAction::Bind) {
+      EltII = PatList[I].II;
+      Loc = PatList[I].Loc;
+    } else {
+      SmallString<64> Name;
+      llvm::raw_svector_ostream Stream(Name);
+      Stream << "__pat_" << InspectPatCount << "_" << I;
+      EltII = &Context.Idents.get(Stream.str());
+    }
+    auto *BD = BindingDecl::Create(Context, DC, Loc, EltII);
     PushOnScopeChains(BD, CurScope, true /*AddToContext*/);
     Bindings.push_back(BD);
   }
@@ -832,31 +838,17 @@ StmtResult Sema::ActOnStructuredBindingPattern(
   // element in the pattern list try to ==/match() with the equivalent element
   // in the decomposed inspect condition. Build a BO_LAnd chain on top of those
   // results into PatCond. Note that instead, we could have just emitted a list
-  // of matching expressions and let codegen implement it with a chain of 'and's,
-  // but this will require all conditions to be evaluated and we wanna be able
-  // to shortcut matching a pattern as soon as we see a false condition.
-  //
-  // We skip using the binding in favor of its underlying type. Doing this
-  // allows for better diagnostics instead of implicit reserved names.
-  ArrayRef<BindingDecl *> NewBindings = DecompCond->bindings();
-  SmallVector<Stmt *, 16> VarDecls;
+  // of matching expressions and let codegen implement it with a chain of
+  // 'and's, but this will require all conditions to be evaluated and we wanna
+  // be able to shortcut matching a pattern as soon as we see a false condition.
   Expr *PatCond = nullptr;
-
+  ArrayRef<BindingDecl *> NewBindings = DecompCond->bindings();
   for (int I = 0, E = PatList.size(); I != E; ++I) {
-    Expr *Elt = NewBindings[I]->getBinding();
-
     switch (PatList[I].Action) {
-    case ParsedPatEltAction::Bind: {
-      StmtResult DecompCondStmt =
-          CreatePatternIdBindingVar(Elt, PatList[I].II, PatList[I].Loc);
-      if (DecompCondStmt.isInvalid())
-        continue;
-      VarDecls.push_back(DecompCondStmt.get());
-      break;
-    }
     case ParsedPatEltAction::Match: {
       ExprResult M =
-          ActOnMatchBinOp(Elt, cast<Expr>(PatList[I].Elt), MatchSourceLoc);
+          ActOnMatchBinOp(NewBindings[I]->getBinding(),
+                          cast<Expr>(PatList[I].Elt), MatchSourceLoc);
       if (M.isInvalid())
         continue;
       if (!PatCond) {
@@ -873,6 +865,7 @@ StmtResult Sema::ActOnStructuredBindingPattern(
       break;
     }
     case ParsedPatEltAction::Ignore:
+    case ParsedPatEltAction::Bind:
       continue;
     case ParsedPatEltAction::Unknown:
       llvm_unreachable("Parsing issues shall not get here");
@@ -881,7 +874,7 @@ StmtResult Sema::ActOnStructuredBindingPattern(
 
   auto *SBP = StructuredBindingPatternStmt::Create(
       Context, LLoc, ColonLoc, LLoc, RLoc, DecompDS.get(), SubStmt, Guard,
-      PatCond, VarDecls, ExcludedFromTypeDeduction);
+      PatCond, ExcludedFromTypeDeduction);
 
   Inspect->addPattern(SBP);
   return SBP;

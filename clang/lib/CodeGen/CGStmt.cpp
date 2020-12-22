@@ -2366,15 +2366,7 @@ void CodeGenFunction::EmitStructuredBindingPatternStmt(
 
   // Emit code for the current pattern test.
   EmitBlock(ThisPattern);
-
-  // Only emit the decomposition if there are any binding variables or
-  // expression checks.
-  if (S.size() || S.hasPatCond())
-    EmitStmt(S.getDecompStmt());
-
-  // Emit code for all variable decls coming from identifier pattern elements.
-  for (auto &VarDecl : S.vardecls())
-    EmitStmt(VarDecl);
+  EmitStmt(S.getDecompStmt());
 
   // Emit code to handle the condition for the matching expression.
   if (S.hasPatCond())

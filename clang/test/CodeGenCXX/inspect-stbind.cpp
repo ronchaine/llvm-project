@@ -27,18 +27,29 @@ int stbind0(s &a) {
 // CHECK-LABEL: _Z7stbind1R1s(
 int stbind1(s &a) {
   // CHECK: %inspect.result{{.*}}alloca
-  // CHECK: %[[NEW_ID:.*]] = alloca i32*
   // CHECK: br label %pat.stbind
   int x = inspect (a) {
        [1,__,new_id] => new_id+1;
       // CHECK: pat.stbind:
-      // CHECK: %[[C:.*]] = getelementptr inbounds %struct.s, %struct.s* {{.*}}, i32 0, i32 2
-      // CHECK: store i32* %[[C]], i32** %[[NEW_ID]]
       // CHECK: icmp eq i32 {{.*}}, 1
       // CHECK: br i1 {{.*}}, label %patbody, label %pat.wildcard
+      // CHECK: patbody:
+      // CHECK: %[[C:.*]] = getelementptr inbounds %struct.s, %struct.s* {{.*}}, i32 0, i32 2
+      // CHECK: load i32, i32* %[[C]], align 4
+      // CEHCK: br label %inspect.epilogue
       __ => 0;
   };
 
   // CHECK: load{{.*}}%inspect.result
   return x;
+}
+
+void stbind_bitfield() {
+  struct insn_type {
+    unsigned opc : 16, imm : 16;
+  };
+  insn_type insn;
+  inspect(insn) {
+    [o, i] => { o++; };
+  };
 }
