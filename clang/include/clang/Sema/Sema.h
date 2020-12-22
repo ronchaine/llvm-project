@@ -8818,7 +8818,7 @@ public:
                                   Expr *PatternGuard,
                                   bool ExcludedFromTypeDeduction);
   StmtResult ActOnIdentifierPattern(SourceLocation IdentifierLoc,
-                                    SourceLocation ColonLoc, IdentifierInfo *II,
+                                    SourceLocation ColonLoc, Stmt *NewIdVar,
                                     Stmt *SubStmt, Expr *PatternGuard,
                                     bool ExcludedFromTypeDeduction);
   StmtResult ActOnExpressionPattern(SourceLocation CstExprLoc,

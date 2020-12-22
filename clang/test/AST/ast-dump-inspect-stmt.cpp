@@ -29,14 +29,16 @@ void TestInspect(int a, int b) {
 
   int x = 3;
   int w = inspect(x) -> int {
-    y => y++;
+    y if (y>0) => y++;
   };
   // CHECK: InspectExpr {{.*}}'int' has_explicit_result_type
-  // CHECK: IdentifierPatternStmt 0x{{[^ ]*}} <line:[[@LINE-3]]:5, col:11>
-  // CHECK-NEXT: UnaryOperator 0x{{[^ ]*}} <col:10, col:11> 'int':'int' postfix '++'
-  // CHECK-NEXT: DeclRefExpr 0x{{[^ ]*}} <col:10> 'int':'int' lvalue Var 0x{{[^ ]*}} 'y' 'int &&'
-  // CHECK-NEXT: DeclStmt 0x{{[^ ]*}} <col:5>
+  // CHECK: IdentifierPatternStmt 0x{{[^ ]*}} <line:[[@LINE-3]]:5, col:20> has_guard
+  // CHECK-NEXT: UnaryOperator 0x{{[^ ]*}} <col:19, col:20> 'int':'int' postfix '++'
+  // CHECK-NEXT: DeclRefExpr 0x{{[^ ]*}} <col:19> 'int':'int' lvalue Var 0x{{[^ ]*}} 'y' 'int &&'
+  // CHECK-NEXT: DeclStmt 0x{{[^ ]*}}
   // CHECK-NEXT: VarDecl 0x{{.*}} used y 'int &&' auto cinit
+  // CHECK: BinaryOperator {{.*}} 'bool' '>'
+  // CHECK: DeclRefExpr {{.*}} <col:11> 'int':'int' lvalue Var {{.*}} 'y' 'int &&'
 
   int v = inspect(x) -> int {
     7 => 4;
@@ -80,10 +82,10 @@ void TestInspect(int a, int b) {
     [1, 2] => { cond.a++; };
   };
   // CHECK: InspectExpr {{.*}} 'void' has_implicit_result_type
-  // CHECK: StructuredBindingPatternStmt {{.*}} <line:80:5, col:10>
+  // CHECK: StructuredBindingPatternStmt {{.*}}
   // CHECK: CompoundStmt {{.*}} <col:15, col:27>
   // CHECK: DeclStmt
-  // CHECK: `-DecompositionDecl {{.*}} line:79:12 used 's &' cinit
+  // CHECK: `-DecompositionDecl {{.*}} used 's &' cinit
   // CHECK:   |-BindingDecl {{.*}} <col:12> col:12 __pat_0_0 'int'
   // CHECK:     `-MemberExpr {{.*}} <col:12> 'int' lvalue .a
   // CHECK:   `-BindingDecl {{.*}} <col:12> col:12 __pat_0_1 'int'

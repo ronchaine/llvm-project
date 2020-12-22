@@ -83,6 +83,7 @@ int i() {
   int y = 4;
   inspect (y) {
     x => {} // x is defined within pattern scope, inspect should return 4.
+    x if (x > 3) =>;
   };
 }
 

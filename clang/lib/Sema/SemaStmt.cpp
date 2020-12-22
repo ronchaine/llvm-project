@@ -635,21 +635,17 @@ StmtResult Sema::ActOnWildcardPattern(SourceLocation WildcardLoc,
 }
 
 StmtResult Sema::ActOnIdentifierPattern(SourceLocation IdentifierLoc,
-                                        SourceLocation ColonLoc,
-                                        IdentifierInfo *II, Stmt *SubStmt,
-                                        Expr *PatternGuard,
+                                        SourceLocation ColonLoc, Stmt *NewIdVar,
+                                        Stmt *SubStmt, Expr *PatternGuard,
                                         bool ExcludedFromTypeDeduction) {
   if (getCurFunction()->InspectStack.empty())
     return StmtError();
   InspectExpr *Inspect = getCurFunction()->InspectStack.back().getPointer();
 
-  StmtResult NewVDStmt =
-      CreatePatternIdBindingVar(Inspect->getCond(), II, IdentifierLoc);
-
   auto *IPS =
       IdentifierPatternStmt::Create(Context, IdentifierLoc, ColonLoc,
                                     PatternGuard, ExcludedFromTypeDeduction);
-  IPS->setVar(NewVDStmt.get());
+  IPS->setVar(NewIdVar);
   IPS->setSubStmt(SubStmt);
   Inspect->addPattern(IPS);
 
