@@ -174,3 +174,26 @@ void TestInspect(int a, int b) {
   // CHECK:     `-BindingDecl {{.*}}  <col:9> col:9 i 'unsigned int'
   // CHECK:       `-MemberExpr {{.*}}  <col:9> 'unsigned int' lvalue bitfield .imm
 }
+
+using size_t = decltype(sizeof(0));
+
+namespace std { template<typename T> struct tuple_size; }
+namespace std { template<size_t, typename> struct tuple_element; }
+
+struct C { template<int> int get() const; };
+template<> struct std::tuple_size<C> { static const int value = 2; };
+template<> struct std::tuple_element<0, C> { typedef int type; };
+template<> struct std::tuple_element<1, C> { typedef float type; };
+
+void stbind_tuple() {
+  inspect(C()) {
+    [3, 2.3] =>;
+  };
+  // CHECK: `-BinaryOperator {{.*}} 'bool' '&&'
+  // CHECK:   |-BinaryOperator {{.*}} 'bool' '=='
+  // CHECK:   | |-ImplicitCastExpr {{.*}} 'std::tuple_element<0, C>::type':'int' <LValueToRValue>
+  // CHECK:   | | `-DeclRefExpr {{.*}} <col:11> 'std::tuple_element<0, C>::type':'int' lvalue Var {{.*}} '__pat_0_0' 'std::tuple_element<0, C>::type &&'
+  // CHECK:   `-BinaryOperator {{.*}} 'bool' '=='
+  // CHECK:     | `-ImplicitCastExpr {{.*}} <col:11> 'std::tuple_element<1, C>::type':'float' <LValueToRValue>
+  // CHECK:     |   `-DeclRefExpr {{.*}} <col:11> 'std::tuple_element<1, C>::type':'float' lvalue Var {{.*}} '__pat_0_1' 'std::tuple_element<1, C>::type &&'
+}

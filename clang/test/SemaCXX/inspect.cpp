@@ -206,3 +206,19 @@ void stbind0(int x) {
     [1,2,3,4] =>;
   };
 }
+
+using size_t = decltype(sizeof(0));
+
+namespace std { template<typename T> struct tuple_size; }
+namespace std { template<size_t, typename> struct tuple_element; }
+
+struct C { template<int> int get() const; };
+template<> struct std::tuple_size<C> { static const int value = 2; };
+template<> struct std::tuple_element<0, C> { typedef int type; };
+template<> struct std::tuple_element<1, C> { typedef float type; };
+
+void stbind_tuple() {
+  inspect(C()) {
+    [3, 2.3] =>;
+  };
+}
