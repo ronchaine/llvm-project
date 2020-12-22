@@ -34,9 +34,9 @@ void TestInspect(int a, int b) {
   // CHECK: InspectExpr {{.*}}'int' has_explicit_result_type
   // CHECK: IdentifierPatternStmt 0x{{[^ ]*}} <line:[[@LINE-3]]:5, col:11>
   // CHECK-NEXT: UnaryOperator 0x{{[^ ]*}} <col:10, col:11> 'int':'int' postfix '++'
-  // CHECK-NEXT: DeclRefExpr 0x{{[^ ]*}} <col:10> 'int':'int' lvalue Var 0x{{[^ ]*}} 'y' 'int &'
+  // CHECK-NEXT: DeclRefExpr 0x{{[^ ]*}} <col:10> 'int':'int' lvalue Var 0x{{[^ ]*}} 'y' 'int &&'
   // CHECK-NEXT: DeclStmt 0x{{[^ ]*}} <col:5>
-  // CHECK-NEXT: VarDecl 0x{{.*}} used y 'int &' auto cinit
+  // CHECK-NEXT: VarDecl 0x{{.*}} used y 'int &&' auto cinit
 
   int v = inspect(x) -> int {
     7 => 4;

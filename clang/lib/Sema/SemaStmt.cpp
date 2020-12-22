@@ -580,17 +580,18 @@ StmtResult Sema::CreatePatternIdBindingVar(Expr *From, IdentifierInfo *II,
   //
   //  inspect (v) {
   //    __ : {
-  //      auto &x = v;
+  //      auto &&x = v;
   //      std::cout << x;
   //    }
   //  }
   //
-  // Create a 'auto&' TypeSourceInfo that we can use to deduce against.
+  // Create a 'auto&&' TypeSourceInfo that we can use to deduce against.
   QualType DeductType = Context.getAutoDeductType();
   TypeLocBuilder TLB;
   AutoTypeLoc TL = TLB.push<AutoTypeLoc>(DeductType);
   TL.setNameLoc(IdentifierLoc);
-  DeductType = BuildReferenceType(DeductType, true, IdentifierLoc, II);
+  DeductType =
+      BuildReferenceType(DeductType, false /*LValueRef*/, IdentifierLoc, II);
   assert(!DeductType.isNull() && "can't build reference to auto");
   TLB.push<ReferenceTypeLoc>(DeductType).setSigilLoc(IdentifierLoc);
   TypeSourceInfo *TSI = TLB.getTypeSourceInfo(Context, DeductType);
