@@ -162,19 +162,28 @@ void TestInspect(int a, int b) {
   };
   insn_type insn;
   inspect(insn) {
-    [o, i] => { o++; };
+    [o, i] if (o+i < 12) => { o++; };
   };
   // CHECK: InspectExpr
   // CHECK: StructuredBindingPatternStmt
-  // CHECK: |-CompoundStmt {{.*}} <col:15, col:22>
-  // CHECK: | `-UnaryOperator {{.*}} <col:17, col:18> 'unsigned int' postfix '++'
-  // CHECK: |   `-DeclRefExpr {{.*}} <col:17> 'unsigned int' lvalue bitfield Binding {{.*}} 'o' 'unsigned int'
-  // CHECK: `-DeclStmt
+  // CHECK: |-CompoundStmt {{.*}} <col:29, col:36>
+  // CHECK: | `-UnaryOperator {{.*}} <col:31, col:32> 'unsigned int' postfix '++'
+  // CHECK: |   `-DeclRefExpr {{.*}} <col:31> 'unsigned int' lvalue bitfield Binding {{.*}} 'o' 'unsigned int'
+  // CHECK: |-DeclStmt
   // CHECK:   `-DecompositionDecl {{.*}} used 'insn_type &' cinit
   // CHECK:     |-BindingDecl {{.*}}  col:6 referenced o 'unsigned int'
   // CHECK:     | `-MemberExpr {{.*}} <col:6> 'unsigned int' lvalue bitfield .opc
-  // CHECK:     `-BindingDecl {{.*}}  <col:9> col:9 i 'unsigned int'
-  // CHECK:       `-MemberExpr {{.*}}  <col:9> 'unsigned int' lvalue bitfield .imm
+  // CHECK:     `-BindingDecl {{.*}} <col:9> col:9 referenced i 'unsigned int'
+  // CHECK:       `-MemberExpr {{.*}} <col:9> 'unsigned int' lvalue bitfield .imm
+  // CHECK: `-BinaryOperator {{.*}} <col:16, col:22> 'bool' '<'
+  // CHECK:   |-BinaryOperator {{.*}} <col:16, col:18> 'int' '+'
+  // CHECK:   | |-ImplicitCastExpr {{.*}} <col:16> 'int' <IntegralCast>
+  // CHECK:   | | `-ImplicitCastExpr {{.*}} <col:16> 'unsigned int' <LValueToRValue>
+  // CHECK:   | |   `-DeclRefExpr {{.*}} <col:16> 'unsigned int' lvalue bitfield Binding {{.*}} 'o' 'unsigned int'
+  // CHECK:   | `-ImplicitCastExpr {{.*}} <col:18> 'int' <IntegralCast>
+  // CHECK:   |   `-ImplicitCastExpr {{.*}} <col:18> 'unsigned int' <LValueToRValue>
+  // CHECK:   |     `-DeclRefExpr {{.*}} <col:18> 'unsigned int' lvalue bitfield Binding {{.*}} 'i' 'unsigned int'
+  // CHECK:   `-IntegerLiteral {{.*}} <col:22> 'int' 12
 }
 
 using size_t = decltype(sizeof(0));

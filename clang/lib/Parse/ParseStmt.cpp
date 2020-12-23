@@ -1018,7 +1018,12 @@ StmtResult Parser::ParseStructuralBindingPattern(ParsedStmtContext StmtCtx) {
   SourceLocation IfLoc;
 
   ParseScope PatternScope(this, Scope::PatternScope | Scope::DeclScope, true);
-
+  StmtResult DecompDS;
+  if (ValidPatList) {
+    DecompDS = Actions.ActOnPatternList(PatList, LSquare);
+    if (DecompDS.isInvalid())
+      ValidPatList = false;
+  }
   // FIXME: retrieve constexpr information from InspectExpr
   if (Tok.is(tok::kw_if))
     if (!ParsePatternGuard(Cond, IfLoc, false /*IsConstexprIf*/))
@@ -1051,7 +1056,7 @@ StmtResult Parser::ParseStructuralBindingPattern(ParsedStmtContext StmtCtx) {
   if (ValidPatList)
     Res = Actions.ActOnStructuredBindingPattern(
         ArrowLoc, LSquare, RSquare, PatList, nullptr, Cond.get().second,
-        ExclaimLoc.isValid());
+        DecompDS.get(), ExclaimLoc.isValid());
 
   // Parse the statement
   //

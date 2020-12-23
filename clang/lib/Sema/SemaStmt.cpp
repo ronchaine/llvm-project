@@ -733,10 +733,9 @@ StmtResult Sema::ActOnExpressionPattern(SourceLocation MatchExprLoc,
   return EPS;
 }
 
-StmtResult Sema::ActOnStructuredBindingPattern(
-    SourceLocation ColonLoc, SourceLocation LLoc, SourceLocation RLoc,
-    SmallVectorImpl<Sema::ParsedPatEltResult> &PatList, Stmt *SubStmt,
-    Expr *Guard, bool ExcludedFromTypeDeduction) {
+StmtResult
+Sema::ActOnPatternList(SmallVectorImpl<Sema::ParsedPatEltResult> &PatList,
+                       SourceLocation LLoc) {
   if (PatList.empty()) {
     Diag(LLoc, diag::err_empty_stbind_pattern);
     return StmtError();
@@ -800,7 +799,8 @@ StmtResult Sema::ActOnStructuredBindingPattern(
 
   // Deduce the type of the inspect condition.
   QualType DeducedType = deduceVarTypeFromInitializer(
-      /*VarDecl*/ DecompCond, DeclarationName(), DeductType, TSI, SourceRange(LLoc),
+      /*VarDecl*/ DecompCond, DeclarationName(), DeductType, TSI,
+      SourceRange(LLoc),
       /*IsDirectInit*/ false, MatchSource);
   if (DeducedType.isNull()) // deduceVarTypeFromInitializer already emits diags
     return StmtError();
@@ -829,6 +829,18 @@ StmtResult Sema::ActOnStructuredBindingPattern(
                     DecompCond->getBeginLoc(), DecompCond->getEndLoc());
   if (DecompDS.isInvalid())
     return StmtError();
+  return DecompDS;
+}
+
+StmtResult Sema::ActOnStructuredBindingPattern(
+    SourceLocation ColonLoc, SourceLocation LLoc, SourceLocation RLoc,
+    SmallVectorImpl<Sema::ParsedPatEltResult> &PatList, Stmt *SubStmt,
+    Expr *Guard, Stmt *DecompStmt, bool ExcludedFromTypeDeduction) {
+  auto *DS = static_cast<DeclStmt *>(DecompStmt);
+  auto *DecompCond = cast<DecompositionDecl>(DS->getSingleDecl());
+  if (getCurFunction()->InspectStack.empty())
+    return StmtError();
+  InspectExpr *Inspect = getCurFunction()->InspectStack.back().getPointer();
 
   // Now that we got all bindings populated with the proper type, for each
   // element in the pattern list try to ==/match() with the equivalent element
@@ -844,7 +856,7 @@ StmtResult Sema::ActOnStructuredBindingPattern(
     case ParsedPatEltAction::Match: {
       ExprResult M =
           ActOnMatchBinOp(NewBindings[I]->getBinding(),
-                          cast<Expr>(PatList[I].Elt), MatchSourceLoc);
+                          cast<Expr>(PatList[I].Elt), PatList[I].Loc);
       if (M.isInvalid())
         continue;
       if (!PatCond) {
@@ -869,8 +881,8 @@ StmtResult Sema::ActOnStructuredBindingPattern(
   }
 
   auto *SBP = StructuredBindingPatternStmt::Create(
-      Context, LLoc, ColonLoc, LLoc, RLoc, DecompDS.get(), SubStmt, Guard,
-      PatCond, ExcludedFromTypeDeduction);
+      Context, LLoc, ColonLoc, LLoc, RLoc, DecompStmt, SubStmt, Guard, PatCond,
+      ExcludedFromTypeDeduction);
 
   Inspect->addPattern(SBP);
   return SBP;

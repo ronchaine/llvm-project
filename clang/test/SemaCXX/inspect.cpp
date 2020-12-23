@@ -199,6 +199,7 @@ void stbind0(int x) {
   int array[2] = {2,1};
   inspect (array) {
     [1,2] =>;
+    [id0, id1] if (id0+id1 < 10) =>;
   };
 
   using FourUInts = unsigned __attribute__((__vector_size__(16)));
