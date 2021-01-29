@@ -1812,6 +1812,7 @@ ExprResult Parser::ParseCastExpression(CastParseKind ParseKind,
                                    PreferredType.get(Tok.getLocation()));
     return ExprError();
   }
+
 #define TRANSFORM_TYPE_TRAIT_DEF(_, Trait) case tok::kw___##Trait:
 #include "clang/Basic/TransformTypeTraits.def"
     // HACK: libstdc++ uses some of the transform-type-traits as alias
@@ -1823,6 +1824,10 @@ ExprResult Parser::ParseCastExpression(CastParseKind ParseKind,
       goto ParseIdentifier;
     }
     goto ExpectedExpression;
+
+  case tok::kw_match: // C++ P2688 Pattern Matching: inspect-statement
+    Res = ParseInspectExpr();
+    break;
   case tok::l_square:
     if (getLangOpts().CPlusPlus) {
       if (getLangOpts().ObjC) {
@@ -1848,10 +1853,14 @@ ExprResult Parser::ParseCastExpression(CastParseKind ParseKind,
       Res = ParseObjCMessageExpression();
       break;
     }
+<<<<<<< HEAD
     [[fallthrough]];
   case tok::kw_match: // C++ P2688 Pattern Matching: inspect-statement
     Res = ParseInspectExpr();
     break;
+=======
+    LLVM_FALLTHROUGH;
+>>>>>>> e01b7f381c56 (Fix incorrect fallthrough from parsing '[')
   default:
   ExpectedExpression:
     NotCastExpr = true;
