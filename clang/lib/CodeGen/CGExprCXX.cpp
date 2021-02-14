@@ -2387,6 +2387,8 @@ static const char *GetPatternName(const PatternStmt *S) {
     return "pat.exp";
   if (const auto *EPS = dyn_cast<StructuredBindingPatternStmt>(S))
     return "pat.stbind";
+  if (const auto *AP = dyn_cast<AlternativePatternStmt>(S))
+    return "pat.alt";
   llvm_unreachable("unexpected pattern type");
 }
 

@@ -645,6 +645,7 @@ private:
   CFGBlock *VisitExpressionPatternStmt(ExpressionPatternStmt *Terminator);
   CFGBlock *
   VisitStructuredBindingPatternStmt(StructuredBindingPatternStmt *Terminator);
+  CFGBlock *VisitAlternativePatternStmt(AlternativePatternStmt *Terminator);
 
   void maybeAddScopeBeginForVarDecl(CFGBlock *B, const VarDecl *VD,
                                     const Stmt *S) {
@@ -2431,6 +2432,9 @@ CFGBlock *CFGBuilder::Visit(Stmt * S, AddStmtChoice asc,
     case Stmt::StructuredBindingPatternStmtClass:
       return VisitStructuredBindingPatternStmt(
           cast<StructuredBindingPatternStmt>(S));
+
+    case Stmt::AlternativePatternStmtClass:
+      return VisitAlternativePatternStmt(cast<AlternativePatternStmt>(S));
   }
 }
 
@@ -4760,6 +4764,11 @@ CFGBlock *CFGBuilder::VisitExpressionPatternStmt(ExpressionPatternStmt *EPS) {
 
 CFGBlock *CFGBuilder::VisitStructuredBindingPatternStmt(
     StructuredBindingPatternStmt *Terminator) {
+  return nullptr;
+}
+
+CFGBlock *
+CFGBuilder::VisitAlternativePatternStmt(AlternativePatternStmt *Terminator) {
   return nullptr;
 }
 

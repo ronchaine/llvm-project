@@ -2414,6 +2414,7 @@ DEF_TRAVERSE_STMT(WildcardPatternStmt, {})
 DEF_TRAVERSE_STMT(IdentifierPatternStmt, {})
 DEF_TRAVERSE_STMT(ExpressionPatternStmt, {})
 DEF_TRAVERSE_STMT(StructuredBindingPatternStmt, {})
+DEF_TRAVERSE_STMT(AlternativePatternStmt, {})
 
 DEF_TRAVERSE_STMT(CXXForRangeStmt, {
   if (!getDerived().shouldVisitImplicitCode()) {

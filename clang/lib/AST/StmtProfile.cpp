@@ -312,6 +312,11 @@ void StmtProfiler::VisitStructuredBindingPatternStmt(
   VisitStmt(S);
 }
 
+void StmtProfiler::VisitAlternativePatternStmt(
+    const AlternativePatternStmt *S) {
+  VisitStmt(S);
+}
+
 void StmtProfiler::VisitWhileStmt(const WhileStmt *S) {
   VisitStmt(S);
   VisitDecl(S->getConditionVariable());

@@ -2424,6 +2424,17 @@ extern const internal::VariadicDynCastAllOfMatcher<Stmt,
                                                    StructuredBindingPatternStmt>
     structuredBindingPatternStmt;
 
+/// Matches alternative pattern statements inside inspect expressions.
+///
+/// Given
+/// \code
+///   inspect(a) { b => x(); <T> => y();  __ => z() }
+/// \endcode
+/// AlternativePatternStmt()
+///   matches '<T> =>'.
+extern const internal::VariadicDynCastAllOfMatcher<Stmt, AlternativePatternStmt>
+    alternativePatternStmt;
+
 /// Matches compound statements.
 ///
 /// Example matches '{}' and '{{}}' in 'for (;;) {{}}'

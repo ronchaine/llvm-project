@@ -211,6 +211,10 @@ CXCursor cxcursor::MakeCXCursor(const Stmt *S, const Decl *Parent,
   case Stmt::StructuredBindingPatternStmtClass:
     K = CXCursor_StructuredBindingPatternStmt;
     break;
+    
+  case Stmt::AlternativePatternStmtClass:
+    K = CXCursor_AlternativePatternStmt;
+    break;
 
   case Stmt::WhileStmtClass:
     K = CXCursor_WhileStmt;

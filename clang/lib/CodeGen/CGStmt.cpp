@@ -117,6 +117,7 @@ void CodeGenFunction::EmitStmt(const Stmt *S, ArrayRef<const Attr *> Attrs) {
   case Stmt::IdentifierPatternStmtClass:
   case Stmt::ExpressionPatternStmtClass:
   case Stmt::StructuredBindingPatternStmtClass:
+  case Stmt::AlternativePatternStmtClass:
     llvm_unreachable("should have emitted these statements as simple");
 
 #define STMT(Type, Base)
@@ -497,6 +498,9 @@ bool CodeGenFunction::EmitSimpleStmt(const Stmt *S,
     break;
   case Stmt::StructuredBindingPatternStmtClass:
     EmitStructuredBindingPatternStmt(cast<StructuredBindingPatternStmt>(*S));
+    break;
+  case Stmt::AlternativePatternStmtClass:
+    EmitAlternativePatternStmt(cast<AlternativePatternStmt>(*S));
     break;
   }
   return true;
@@ -2213,6 +2217,8 @@ static const char *GetPatternName(const PatternStmt *S) {
     return "pat.exp";
   if (const auto *EPS = dyn_cast<StructuredBindingPatternStmt>(S))
     return "pat.stbind";
+  if (const auto *AP = dyn_cast<AlternativePatternStmt>(S))
+    return "pat.alt";
   llvm_unreachable("unexpected pattern type");
 }
 
@@ -2382,6 +2388,11 @@ void CodeGenFunction::EmitStructuredBindingPatternStmt(
 
   // Emit the pattern body
   EmitPatternStmtBody(S);
+}
+
+void CodeGenFunction::EmitAlternativePatternStmt(
+    const AlternativePatternStmt &S) {
+  assert(0 && "not implemented");
 }
 
 static std::string

@@ -247,3 +247,21 @@ void StructuredBindingPatternStmt::setDecompStmt(const ASTContext &Ctx,
                                                  Stmt *S) {
   getTrailingObjects<Stmt *>()[decompDeclOffset()] = S;
 }
+
+AlternativePatternStmt *
+AlternativePatternStmt::CreateEmpty(const ASTContext &Ctx,
+                                    bool HasPatternGuard) {
+  void *Mem = Ctx.Allocate(
+      totalSizeToAlloc<Stmt *>(NumMandatoryStmtPtr + HasPatternGuard),
+      alignof(AlternativePatternStmt));
+  return new (Mem) AlternativePatternStmt(EmptyShell(), HasPatternGuard);
+}
+
+AlternativePatternStmt *
+AlternativePatternStmt::Create(const ASTContext &Ctx,
+                               SourceLocation PatternLoc,
+                               SourceLocation ColonLoc,
+                               Expr *patternGuard,
+                               bool ExcludedFromTypeDeduction) {
+    assert(0 && "not implemented");
+}

@@ -256,6 +256,7 @@ public:
   void VisitIdentifierPatternStmt(const IdentifierPatternStmt *Node);
   void VisitExpressionPatternStmt(const ExpressionPatternStmt *Node);
   void VisitStructuredBindingPatternStmt(const StructuredBindingPatternStmt *S);
+  void VisitAlternativePatternStmt(const AlternativePatternStmt *Node);
   void VisitWhileStmt(const WhileStmt *Node);
   void VisitLabelStmt(const LabelStmt *Node);
   void VisitGotoStmt(const GotoStmt *Node);

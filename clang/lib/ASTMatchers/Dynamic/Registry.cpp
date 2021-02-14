@@ -132,6 +132,7 @@ RegistryMaps::RegistryMaps() {
   REGISTER_MATCHER(addrLabelExpr);
   REGISTER_MATCHER(alignOfExpr);
   REGISTER_MATCHER(allOf);
+  REGISTER_MATCHER(alternativePatternStmt);
   REGISTER_MATCHER(anyOf);
   REGISTER_MATCHER(anything);
   REGISTER_MATCHER(arrayInitIndexExpr);

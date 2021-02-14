@@ -31,6 +31,7 @@ def WildcardPatternStmt : StmtNode<PatternStmt>;
 def IdentifierPatternStmt : StmtNode<PatternStmt>;
 def ExpressionPatternStmt : StmtNode<PatternStmt>;
 def StructuredBindingPatternStmt : StmtNode<PatternStmt>;
+def AlternativePatternStmt : StmtNode<PatternStmt>;
 
 // Statements that might produce a value (for example, as the last non-null
 // statement in a GNU statement-expression).

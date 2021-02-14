@@ -8012,6 +8012,12 @@ StmtResult TreeTransform<Derived>::TransformStructuredBindingPatternStmt(
   return StmtError();
 }
 
+template <typename Derived>
+StmtResult TreeTransform<Derived>::TransformAlternativePatternStmt(
+    AlternativePatternStmt *S) {
+  return StmtError();
+}
+
 template<typename Derived>
 StmtResult
 TreeTransform<Derived>::TransformWhileStmt(WhileStmt *S) {

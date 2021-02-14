@@ -334,6 +334,7 @@ public:
   void VisitIdentifierPatternStmt(const IdentifierPatternStmt *IPS);
   void VisitExpressionPatternStmt(const ExpressionPatternStmt *EPS);
   void VisitStructuredBindingPatternStmt(const StructuredBindingPatternStmt *S);
+  void VisitAlternativePatternStmt(const AlternativePatternStmt *APS);
   void VisitCaseStmt(const CaseStmt *CS);
   void VisitLabelStmt(const LabelStmt *LS);
   void VisitGotoStmt(const GotoStmt *GS);

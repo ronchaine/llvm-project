@@ -419,6 +419,16 @@ void StmtPrinter::VisitStructuredBindingPatternStmt(
   PrintStmt(Node->getSubStmt(), 0);
 }
 
+void StmtPrinter::VisitAlternativePatternStmt(AlternativePatternStmt *Node) {
+  Indent();
+  PrintExpr(cast<Expr>(Node->getMatchCond()));
+  if (Node->hasPatternGuard()) {
+    PrintExpr(Node->getPatternGuard());
+  }
+  OS << " => ";
+  PrintStmt(Node->getSubStmt(), 0);
+}
+
 void StmtPrinter::VisitWhileStmt(WhileStmt *Node) {
   Indent() << "while (";
   if (const DeclStmt *DS = Node->getConditionVariableDeclStmt())

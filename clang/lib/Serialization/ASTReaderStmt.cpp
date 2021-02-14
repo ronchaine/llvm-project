@@ -336,6 +336,10 @@ void ASTStmtReader::VisitStructuredBindingPatternStmt(
   assert(0 && "not implemented");
 }
 
+void ASTStmtReader::VisitAlternativePatternStmt(AlternativePatternStmt *S) {
+  assert(0 && "not implemented");
+}
+
 void ASTStmtReader::VisitWhileStmt(WhileStmt *S) {
   VisitStmt(S);
 
@@ -3033,6 +3037,12 @@ Stmt *ASTReader::ReadStmtFromStream(ModuleFile &F) {
 
     case STMT_EXPRESSIONPATTERN:
       S = ExpressionPatternStmt::CreateEmpty(
+          Context,
+          /* HasPatternGuard=*/Record[ASTStmtReader::NumStmtFields]);
+      break;
+
+    case STMT_ALTERNATIVEPATTERN:
+      S = AlternativePatternStmt::CreateEmpty(
           Context,
           /* HasPatternGuard=*/Record[ASTStmtReader::NumStmtFields]);
       break;

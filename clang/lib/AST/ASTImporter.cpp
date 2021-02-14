@@ -544,6 +544,7 @@ namespace clang {
     ExpectedStmt VisitExpressionPatternStmt(ExpressionPatternStmt *S);
     ExpectedStmt
     VisitStructuredBindingPatternStmt(StructuredBindingPatternStmt *S);
+    ExpectedStmt VisitAlternativePatternStmt(AlternativePatternStmt *S);
     ExpectedStmt VisitWhileStmt(WhileStmt *S);
     ExpectedStmt VisitDoStmt(DoStmt *S);
     ExpectedStmt VisitForStmt(ForStmt *S);
@@ -7031,6 +7032,12 @@ ASTNodeImporter::VisitExpressionPatternStmt(ExpressionPatternStmt *S) {
 ExpectedStmt ASTNodeImporter::VisitStructuredBindingPatternStmt(
     StructuredBindingPatternStmt *S) {
   assert(0 && "not implemented");
+  return S;
+}
+
+ExpectedStmt
+ASTNodeImporter::VisitAlternativePatternStmt(AlternativePatternStmt *S) {
+  assert(0 && "Not implemented");
   return S;
 }
 

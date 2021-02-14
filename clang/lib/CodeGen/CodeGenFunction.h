@@ -3378,6 +3378,7 @@ public:
   void EmitIdentifierPatternStmt(const IdentifierPatternStmt &S);
   void EmitExpressionPatternStmt(const ExpressionPatternStmt &S);
   void EmitStructuredBindingPatternStmt(const StructuredBindingPatternStmt &S);
+  void EmitAlternativePatternStmt(const AlternativePatternStmt &S);
 
   void EmitAsmStmt(const AsmStmt &S);
 

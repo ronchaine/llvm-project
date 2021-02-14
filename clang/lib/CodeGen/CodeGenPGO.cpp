@@ -136,6 +136,7 @@ public:
     IdentifierPatternStmtClass,
     ExpressionPatternStmtClass,
     StructuredBindingPatternStmtClass,
+    AlternativePatternStmtClass,
     // The preceding values are available since PGO_HASH_V2.
 
     // Keep this last.  It's for the static assert that follows.
@@ -530,6 +531,8 @@ struct MapRegionCounters : public RecursiveASTVisitor<MapRegionCounters> {
       return PGOHash::ExpressionPatternStmtClass;
     case Stmt::StructuredBindingPatternStmtClass:
       return PGOHash::StructuredBindingPatternStmtClass;
+    case Stmt::AlternativePatternStmtClass:
+      return PGOHash::AlternativePatternStmtClass;
     case Stmt::IfStmtClass:
       return PGOHash::IfStmt;
     case Stmt::CXXTryStmtClass:

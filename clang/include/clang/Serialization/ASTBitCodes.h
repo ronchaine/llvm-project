@@ -1622,6 +1622,9 @@ enum StmtCode {
   /// A StructuredBindingPatternStmt record.
   STMT_STRUCTUREDBINDINGPATTERN,
 
+  /// An AlternativePatternStmt record.
+  STMT_ALTERNATIVEPATTERN,
+
   /// A constant expression context.
   EXPR_CONSTANT,
 
