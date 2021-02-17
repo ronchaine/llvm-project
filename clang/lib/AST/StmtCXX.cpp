@@ -201,18 +201,13 @@ StructuredBindingPatternStmt::StructuredBindingPatternStmt(
     Expr *Guard, Expr *PatCond, bool ExcludedFromTypeDeduction)
     : PatternStmt(StructuredBindingPatternStmtClass, PatternLoc, ColonLoc,
                   ExcludedFromTypeDeduction) {
-  InspectPatternBits.PatternStmtHasPatternGuard = false;
-  InspectPatternBits.HasPatCond = PatCond != nullptr;
+  setPatternGuard(Guard);
+  setPatCond(PatCond);
   InspectPatternBits.PatternLoc = LLoc;
   setLSquareLoc(LLoc);
   setRSquareLoc(RLoc);
   setDecompStmt(Ctx, DecompCond);
   setSubStmt(SubStmt);
-  setPatCond(PatCond);
-  if (Guard) {
-    InspectPatternBits.PatternStmtHasPatternGuard = true;
-    setPatternGuard(Guard);
-  }
 }
 
 StructuredBindingPatternStmt *StructuredBindingPatternStmt::Create(
