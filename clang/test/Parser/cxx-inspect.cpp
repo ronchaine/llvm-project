@@ -1,4 +1,4 @@
-// RUN: %clang_cc1 -fsyntax-only -verify -fpattern-matching -Wno-unused-value -Wno-string-compare %s
+// RUN: %clang_cc1 -fsyntax-only -verify -fpattern-matching -Wno-string-compare %s
 
 void noParen() {
   inspect 42 { // expected-error {{expected '(' after 'inspect'}}
@@ -64,25 +64,26 @@ void trailingReturnTypes() {
 }
 
 void returnTypeDeduction() {
-  inspect(42) {
+  int x = 0;
+  x += inspect(42) {
     42 => 42;
     43 => 43;
     __ => !{}; // exclude last from type deduction
   };
 
-  inspect(42) {
+  x += inspect(42) {
     42 => 42;
     __ => !{}; // exclude middle from type deduction
     43 => 43;
   };
 
-  inspect(42) {
+  x += inspect(42) {
     __ => !{}; // exclude first from type deduction
     42 => 42;
     43 => 43;
   };
 
-  inspect(42) {
+  x += inspect(42) {
     42 => 42;
     __ => !throw "whoops"; // expected-error {{expected '{' after '!'}}
   };

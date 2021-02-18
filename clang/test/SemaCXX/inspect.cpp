@@ -1,4 +1,4 @@
-// RUN: %clang_cc1 -fsyntax-only -verify -fpattern-matching -Wno-unused-value -Wno-string-compare %s
+// RUN: %clang_cc1 -fsyntax-only -verify -fpattern-matching -Wno-string-compare %s
 
 void a() {
   inspect(42) {
@@ -42,22 +42,22 @@ void e(int x) {
   };
 }
 
-void f(int x) {
-  inspect(x) -> int {
+int f(int x) {
+  return inspect(x) -> int {
     __ => { bar(); }; // expected-error {{resulting expression type 'void' must match trailing result type 'int'}}
   };
 }
 
 void baz() { }
-void f1(int x) {
-  inspect(x) -> int {
+int f1(int x) {
+  return inspect(x) -> int {
     42 => 42;
     __ => !{ baz(); }; // ok because not participating in type deduction
   };
 }
 
-void f2(int x) {
-  inspect(x) -> int {
+int f2(int x) {
+  return inspect(x) -> int {
     __ => !{ baz(); };  // ok because not participating in type deduction
     42 => 42;
   };

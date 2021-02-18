@@ -1,4 +1,4 @@
-// RUN: %clang_cc1 -fsyntax-only -fpattern-matching -ast-dump -Wno-unused-value %s | FileCheck %s
+// RUN: %clang_cc1 -fsyntax-only -fpattern-matching -ast-dump %s | FileCheck %s
 
 void TestInspect(int a, int b) {
   inspect(3) {
