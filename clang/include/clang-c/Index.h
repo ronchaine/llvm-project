@@ -2167,7 +2167,11 @@ enum CXCursorKind {
    */
   CXCursor_ExpressionPatternStmt = 324,
 
-  CXCursor_LastStmt = CXCursor_ExpressionPatternStmt,
+  /** An structured bindings pattern statement.
+   */
+  CXCursor_StructuredBindingPatternStmt = 290,
+
+  CXCursor_LastStmt = CXCursor_StructuredBindingPatternStmt,
 
   /**
    * Cursor that represents the translation unit itself.
