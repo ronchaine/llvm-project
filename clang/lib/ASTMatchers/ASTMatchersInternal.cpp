@@ -923,6 +923,8 @@ const internal::VariadicDynCastAllOfMatcher<Stmt, IdentifierPatternStmt>
     identifierPatternStmt;
 const internal::VariadicDynCastAllOfMatcher<Stmt, ExpressionPatternStmt>
     expressionPatternStmt;
+const internal::VariadicDynCastAllOfMatcher<Stmt, StructuredBindingPatternStmt>
+    structuredBindingPatternStmt;
 const internal::VariadicDynCastAllOfMatcher<Stmt, CompoundStmt> compoundStmt;
 const internal::VariadicDynCastAllOfMatcher<Stmt, CoroutineBodyStmt>
     coroutineBodyStmt;

@@ -569,6 +569,7 @@ RegistryMaps::RegistryMaps() {
   REGISTER_MATCHER(stmt);
   REGISTER_MATCHER(stmtExpr);
   REGISTER_MATCHER(stringLiteral);
+  REGISTER_MATCHER(structuredBindingPatternStmt);
   REGISTER_MATCHER(substNonTypeTemplateParmExpr);
   REGISTER_MATCHER(substTemplateTypeParmType);
   REGISTER_MATCHER(switchCase);

@@ -5782,6 +5782,8 @@ CXString clang_getCursorKindSpelling(enum CXCursorKind Kind) {
     return cxstring::createRef("IdentifierPatternStmt");
   case CXCursor_ExpressionPatternStmt:
     return cxstring::createRef("ExpressionPatternStmt");
+  case CXCursor_StructuredBindingPatternStmt:
+    return cxstring::createRef("StructuredBindingPatternStmt");
   case CXCursor_WhileStmt:
     return cxstring::createRef("WhileStmt");
   case CXCursor_DoStmt:
