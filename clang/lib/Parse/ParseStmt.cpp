@@ -304,7 +304,7 @@ Retry:
     return ParseIfStatement(TrailingElseLoc);
   case tok::kw_switch:              // C99 6.8.4.2: switch-statement
     return ParseSwitchStatement(TrailingElseLoc);
-  case tok::kw_inspect:              // C++ Pattern Matching: inspect-statement
+  case tok::kw_match:               // C++ P2688 / Pattern Matching: match-statement
     return ParseInspectStatement(TrailingElseLoc);
 
   case tok::kw_while:               // C99 6.8.5.1: while-statement
