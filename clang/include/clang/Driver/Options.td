@@ -1637,9 +1637,15 @@ def fembed_offload_object_EQ : Joined<["-"], "fembed-offload-object=">,
   MarshallingInfoStringVector<CodeGenOpts<"OffloadObjects">>;
 
 // C++ Pattern matching P2688R1
-def fpattern_matching : Flag <["-"], "fpattern-matching">, Group<f_Group>,
-  Flags<[DriverOption, CC1Option]>,
-  HelpText<"Enable support for C++ Pattern Matching">;
+//def fpattern_matching : Flag <["-"], "fpattern-matching">, Group<f_Group>,
+//  Flags<[ClangOption, CC1Option]>,
+//  HelpText<"Enable support for C++ Pattern Matching">;
+
+defm pattern_matching : BoolFOption<"pattern-matching",
+  LangOpts<"PatternMatching">, DefaultFalse,
+  PosFlag<SetTrue, [], [ClangOption, CC1Option],
+          "Enable support for C++ P2688R1 Pattern Matching">,
+  NegFlag<SetFalse>>;
 
 def fembed_bitcode_EQ : Joined<["-"], "fembed-bitcode=">,
     Group<f_Group>, Flags<[NoXarchOption]>,

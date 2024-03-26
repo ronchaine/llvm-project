@@ -117,6 +117,7 @@ class CodeCompleteConsumer;
 class CodeCompletionAllocator;
 class CodeCompletionTUInfo;
 class CodeCompletionResult;
+class ConditionResult;
 class CoroutineBodyStmt;
 class Decl;
 class DeclAccessPair;
@@ -8814,7 +8815,7 @@ public:
   ExprResult CheckInspectCondition(SourceLocation InspectLoc, Expr *Cond);
 
   StmtResult ActOnWildcardPattern(SourceLocation WildcardLoc,
-                                  SourceLocation ColonLoc, Stmt *SubStmt
+                                  SourceLocation ColonLoc, Stmt *SubStmt,
                                   Expr *PatternGuard,
                                   bool ExcludedFromTypeDeduction);
   StmtResult ActOnIdentifierPattern(SourceLocation IdentifierLoc,

@@ -2149,8 +2149,6 @@ enum CXCursorKind {
    */
   CXCursor_OpenACCComputeConstruct = 320,
 
-  CXCursor_LastStmt = CXCursor_OpenACCComputeConstruct,
-
   /** An inspect expression.
    */
   CXCursor_InspectExpr = 321,
@@ -2169,11 +2167,11 @@ enum CXCursorKind {
 
   /** An structured bindings pattern statement.
    */
-  CXCursor_StructuredBindingPatternStmt = 290,
+  CXCursor_StructuredBindingPatternStmt = 325,
 
   /** An alternative pattern statement.
    */
-  CXCursor_AlternativePatternStmt = 291,
+  CXCursor_AlternativePatternStmt = 326,
 
   CXCursor_LastStmt = CXCursor_AlternativePatternStmt,
 
