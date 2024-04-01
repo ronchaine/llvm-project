@@ -2140,7 +2140,31 @@ enum CXCursorKind {
    */
   CXCursor_OMPScopeDirective = 306,
 
-  CXCursor_LastStmt = CXCursor_OMPScopeDirective,
+  /** An inspect statement.
+   */
+  CXCursor_InspectExpr = 307,
+
+  /** A wildcard pattern statement.
+   */
+  CXCursor_WildcardPatternStmt = 308,
+
+  /** An identifier pattern statement.
+   */
+  CXCursor_IdentifierPatternStmt = 309,
+
+  /** An expression pattern statement.
+   */
+  CXCursor_ExpressionPatternStmt = 310,
+
+  /** An structured bindings pattern statement.
+   */
+  CXCursor_StructuredBindingPatternStmt = 311,
+
+  /** An alternative pattern statement.
+   */
+  CXCursor_AlternativePatternStmt = 312,
+
+  CXCursor_LastStmt = CXCursor_AlternativePatternStmt,
 
   /**
    * Cursor that represents the translation unit itself.

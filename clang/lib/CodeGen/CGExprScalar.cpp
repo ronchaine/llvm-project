@@ -904,6 +904,10 @@ public:
   }
   Value *VisitAsTypeExpr(AsTypeExpr *CE);
   Value *VisitAtomicExpr(AtomicExpr *AE);
+
+  Value *VisitInspectExpr(InspectExpr *IE) {
+    return CGF.EmitInspectExpr(*IE).getScalarVal();
+  }
 };
 }  // end anonymous namespace.
 

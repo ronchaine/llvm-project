@@ -5672,6 +5672,8 @@ recurse:
     Out << "E";
     break;
   }
+  case Expr::InspectExprClass:
+    assert(0 && "not implemented");
   }
 
   if (AsTemplateArg && !IsPrimaryExpr)

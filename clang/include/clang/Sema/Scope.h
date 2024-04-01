@@ -150,6 +150,12 @@ public:
     /// template scope in between), the outer scope does not increase the
     /// depth of recursion.
     LambdaScope = 0x8000000,
+
+    /// This is the scope of a C++ inspect statement.
+    InspectScope = 0x10000000,
+
+    /// This is the scope of a C++ pattern statement.
+    PatternScope = 0x20000000,
   };
 
 private:
@@ -464,6 +470,35 @@ public:
                                 Scope::BlockScope | Scope::TemplateParamScope |
                                 Scope::FunctionPrototypeScope |
                                 Scope::AtCatchScope | Scope::ObjCMethodScope))
+        return false;
+    }
+    return false;
+  }
+
+  /// isInspectScope - Return true if this scope is an inspect scope.
+  bool isInspectScope() const {
+    for (const Scope *S = this; S; S = S->getParent()) {
+      if (S->getFlags() & Scope::InspectScope)
+        return true;
+      else if (S->getFlags() &
+               (Scope::FnScope | Scope::ClassScope | Scope::BlockScope |
+                Scope::TemplateParamScope | Scope::FunctionPrototypeScope |
+                Scope::AtCatchScope | Scope::ObjCMethodScope))
+        return false;
+    }
+    return false;
+  }
+
+  /// isPatternScope - Return true if this scope is an pattern scope.
+  bool isPatternScope() const {
+    for (const Scope *S = this; S; S = S->getParent()) {
+      if (S->getFlags() & Scope::PatternScope)
+        return true;
+      else if (S->getFlags() &
+               (Scope::FnScope | Scope::ClassScope | Scope::BlockScope |
+                Scope::TemplateParamScope | Scope::FunctionPrototypeScope |
+                Scope::AtCatchScope | Scope::ObjCMethodScope |
+                Scope::InspectScope))
         return false;
     }
     return false;
